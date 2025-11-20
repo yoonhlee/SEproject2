@@ -4,8 +4,6 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
-// 회원가입 요청
-
 data class UserRegisterRequest(
     @field:NotBlank(message = "아이디는 필수입니다")
     @field:Size(min = 4, max = 20, message = "아이디는 4자 이상 20자 이하여야 합니다")
@@ -26,22 +24,31 @@ data class UserRegisterRequest(
     val profileImage: String? = null
 )
 
-/**
- * (수정) 로그인 요청 DTO
- * 1. email -> loginId
- */
 data class UserLoginRequest(
     @field:NotBlank(message = "아이디를 입력해주세요.")
     val loginId: String?,
 
     @field:NotBlank(message = "비밀번호를 입력해주세요.")
-    val passwordRaw: String? // (수정) password -> passwordRaw
+    val passwordRaw: String?
 )
 
-/**
- * (유지) 프로필 수정 요청 DTO
- * (이름만 UpdateProfileRequest -> MemberUpdateProfileRequest로 변경 권장)
- */
+// ID 찾기 요청
+data class FindIdRequest(
+    @field:NotBlank(message = "이메일을 입력해주세요.")
+    @field:Email(message = "올바른 이메일 형식이 아닙니다")
+    val email: String?
+)
+
+// 비밀번호 찾기(임시 비밀번호 발급) 요청
+data class FindPasswordRequest(
+    @field:NotBlank(message = "아이디를 입력해주세요.")
+    val loginId: String?,
+
+    @field:NotBlank(message = "이메일을 입력해주세요.")
+    @field:Email(message = "올바른 이메일 형식이 아닙니다")
+    val email: String?
+)
+
 data class UpdateProfileRequest(
     @field:NotBlank(message = "닉네임을 입력해주세요.")
     @field:Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다")
@@ -50,10 +57,6 @@ data class UpdateProfileRequest(
     val profileImage: String? = null
 )
 
-/**
- * (유지) 비밀번호 변경 요청 DTO
- * (이름만 ChangePasswordRequest -> MemberChangePasswordRequest로 변경 권장)
- */
 data class ChangePasswordRequest(
     @field:NotBlank(message = "현재 비밀번호를 입력해주세요.")
     val currentPassword: String?,

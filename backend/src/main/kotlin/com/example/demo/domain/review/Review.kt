@@ -3,16 +3,18 @@ package com.example.demo.domain.review
 import com.example.demo.domain.user.User
 import com.example.demo.domain.place.Place
 import jakarta.persistence.*
+import jakarta.validation.constraints.Size
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "reviews")
 class Review(
     @Column(nullable = false, length = 1000)
-    var content: String, // 리뷰 내용
+    @field:Size(min = 20, max = 1000, message = "20자 이상 1000자 이하로 작성해 주세요.")
+    var content: String,
 
     @Column(nullable = false)
-    var rating: Int, // 평점
+    var rating: Int,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

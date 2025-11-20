@@ -1,6 +1,5 @@
 package com.example.demo.domain.place.dto
 
-// 1. 장소 등록/수정 주문서
 data class PlaceCreateRequest(
     val name: String,
     val address: String,

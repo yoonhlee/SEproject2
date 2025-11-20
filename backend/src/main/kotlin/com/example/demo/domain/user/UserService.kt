@@ -1,7 +1,9 @@
 package com.example.demo.domain.user
-// (수정) import하는 DTO 클래스명 변경
+
 import com.example.demo.domain.user.dto.UserRegisterRequest
 import com.example.demo.domain.user.dto.UserLoginRequest
+import com.example.demo.domain.user.dto.FindIdRequest
+import com.example.demo.domain.user.dto.FindPasswordRequest
 import com.example.demo.domain.user.dto.UserResponse
 import com.example.demo.domain.user.dto.UpdateProfileRequest
 import com.example.demo.domain.user.dto.ChangePasswordRequest
@@ -19,21 +21,19 @@ class UserService(
 ) {
 
     @Transactional
-    fun signUp(request: UserRegisterRequest): UserResponse { // (수정) DTO 변경
-        // (추가) 아이디 중복 체크
+    fun signUp(request: UserRegisterRequest): UserResponse {
         if (userRepository.existsByLoginId(request.loginId!!)) {
             throw IllegalArgumentException("이미 사용 중인 아이디입니다")
         }
 
-        // 이메일 중복 체크
         if (userRepository.existsByEmail(request.email!!)) {
             throw IllegalArgumentException("이미 사용 중인 이메일입니다")
         }
 
-        // 비밀번호 암호화 (수정) request.password -> request.passwordRaw
+        // 비밀번호 암호화
         val encodedPassword = passwordEncoder.encode(request.passwordRaw!!)
 
-        // 사용자 생성 (수정) loginId 추가
+        // 사용자 생성
         val user = User(
             loginId = request.loginId,
             email = request.email,
@@ -43,12 +43,10 @@ class UserService(
         )
 
         val savedUser = userRepository.save(user)
-        return UserResponse.from(savedUser) // (수정) MemberResponse -> UserResponse
+        return UserResponse.from(savedUser)
     }
 
-    // (수정) 반환 타입을 Boolean -> LoginResponse (실제 토큰 반환)
-    fun login(request: UserLoginRequest): LoginResponse { // (수정) DTO 및 반환 타입 변경
-        // (수정) 이메일이 아닌 loginId로 사용자 조회
+    fun login(request: UserLoginRequest): LoginResponse {
         val user = userRepository.findByLoginId(request.loginId!!)
             ?: throw IllegalArgumentException("존재하지 않는 사용자입니다")
 
@@ -56,12 +54,11 @@ class UserService(
             throw IllegalStateException("비활성화된 계정입니다")
         }
 
-        // 비밀번호 검증 (수정) request.password -> request.passwordRaw
         if (!passwordEncoder.matches(request.passwordRaw!!, user.passwordHash)) {
-            throw IllegalArgumentException("비밀번호가 일치하지 않습니다") // (수정) false 반환 대신 예외 발생
+            throw IllegalArgumentException("비밀번호가 일치하지 않습니다")
         }
 
-        // (추가) 실제 토큰 생성 로직 (예시)
+        // (추가) 실제 토큰 생성 로직
         // val accessToken = jwtTokenProvider.createAccessToken(user.id, user.role)
         // val refreshToken = jwtTokenProvider.createRefreshToken(user.id)
 
@@ -78,6 +75,41 @@ class UserService(
     }
 
     @Transactional(readOnly = true)
+    fun findLoginId(request: FindIdRequest): String {
+        val user = userRepository.findByEmail(request.email!!)
+            ?: throw IllegalArgumentException("해당 이메일로 가입된 계정이 없습니다.")
+
+        return user.loginId
+    }
+
+    //  비밀번호 찾기 -> 임시 비밀번호 발급
+    @Transactional
+    fun resetPassword(request: FindPasswordRequest): String {
+        // 아이디와 이메일로 사용자 확인
+        val user = userRepository.findByLoginIdAndEmail(request.loginId!!, request.email!!)
+            ?: throw IllegalArgumentException("일치하는 사용자 정보가 없습니다.")
+
+        // 임시 비밀번호 생성 (랜덤 8자리 문자열)
+        val tempPassword = generateTempPassword()
+
+        // 임시 비밀번호 암호화 및 DB 업데이트
+        val encodedPassword = passwordEncoder.encode(tempPassword)
+        user.updatePassword(encodedPassword)
+
+        // 사용자가 로그인할 수 있도록 임시 비밀번호 반환
+        return tempPassword
+    }
+
+    // 임시 비밀번호 생성 로직
+    private fun generateTempPassword(): String {
+        val charPool = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        return (1..8)
+            .map { charPool.random() }
+            .joinToString("")
+    }
+
+    // ID 기반 사용자 조회 (프로필, 마이페이지 접속 시 사용)
+    @Transactional(readOnly = true)
     fun getUserById(userId: Long): UserResponse {
         val user = userRepository.findById(userId).orElseThrow {
             IllegalArgumentException("존재하지 않는 사용자입니다")
@@ -85,6 +117,7 @@ class UserService(
         return UserResponse.from(user)
     }
 
+    // Email 기반 사용자 조회 (비밀번호 재설정 시 필요)
     @Transactional(readOnly = true)
     fun getUserByEmail(email: String): UserResponse {
         val user = userRepository.findByEmail(email)
@@ -112,22 +145,21 @@ class UserService(
             IllegalArgumentException("존재하지 않는 사용자입니다")
         }
 
-        // 현재 비밀번호 검증
         if (!passwordEncoder.matches(request.currentPassword!!, user.passwordHash)) {
             throw IllegalArgumentException("현재 비밀번호가 일치하지 않습니다")
         }
 
-        // 새 비밀번호 암호화 및 업데이트
         val newEncodedPassword = passwordEncoder.encode(request.newPassword!!)
         user.updatePassword(newEncodedPassword)
     }
 
+    // 데이터 베이스에서 지우지 않고 isActive = false로 두어 비활성화
     @Transactional
     fun deleteAccount(userId: Long) {
         val user = userRepository.findById(userId).orElseThrow {
             IllegalArgumentException("존재하지 않는 사용자입니다")
         }
-        user.deactivate() // Soft delete
+        user.deactivate()
     }
 
     @Transactional(readOnly = true)

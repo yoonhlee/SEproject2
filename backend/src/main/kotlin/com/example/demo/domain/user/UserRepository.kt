@@ -2,7 +2,6 @@ package com.example.demo.domain.user
 
 import org.springframework.data.jpa.repository.JpaRepository
 
-// "창고 관리자는 이런 '버튼'들을 갖고 있습니다" (인터페이스)
 interface UserRepository : JpaRepository<User, Long> {
 
         // '이메일'로 유저 찾기 버튼
@@ -11,8 +10,12 @@ interface UserRepository : JpaRepository<User, Long> {
         // '이메일'이 존재하는지 확인하는 버튼
         fun existsByEmail(email: String): Boolean
 
-        // (내가 수정을 제안했던) '로그인 ID'로 유저 찾기 버튼
+        // 아이디와 이메일이 모두 일치하는 사용자 찾기 (비밀번호 찾기용)
+        fun findByLoginIdAndEmail(loginId: String, email: String): User?
+
+        // '로그인 ID'로 유저 찾기 버튼
         fun findByLoginId(loginId: String): User?
 
+        // 데이터베이스에  '로그인 ID'를 가진 사용자가 있는지 찾는 버튼
         fun existsByLoginId(loginId: String): Boolean
 }

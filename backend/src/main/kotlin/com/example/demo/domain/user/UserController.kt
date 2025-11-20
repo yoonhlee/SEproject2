@@ -3,6 +3,8 @@ package com.example.demo.domain.user
 import com.example.demo.domain.user.dto.UserRegisterRequest
 import com.example.demo.domain.user.dto.UserLoginRequest
 import com.example.demo.domain.user.dto.UserResponse
+import com.example.demo.domain.user.dto.FindIdRequest
+import com.example.demo.domain.user.dto.FindPasswordRequest
 import com.example.demo.domain.user.dto.UpdateProfileRequest
 import com.example.demo.domain.user.dto.ChangePasswordRequest
 import com.example.demo.domain.user.dto.LoginResponse
@@ -14,11 +16,12 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/users") // (권장) /api/v1/users 와 같이 버전 명시
+@RequestMapping("/api/users") // /api/v1/users 와 같이 버전 명시
 class UserController(
     private val userService: UserService
 ) {
 
+    // 회원가입
     @PostMapping("/signup")
     fun signUp(@Valid @RequestBody request: UserRegisterRequest): ResponseEntity<ApiResponse<UserResponse>> { // (수정) DTO 변경
         val user = userService.signUp(request)
@@ -32,6 +35,7 @@ class UserController(
             )
     }
 
+    // 로그인
     @PostMapping("/login")
     fun login(@Valid @RequestBody request: UserLoginRequest): ResponseEntity<ApiResponse<LoginResponse>> { // (수정) DTO 및 반환 타입 변경
         // Service가 LoginResponse를 직접 반환
@@ -41,14 +45,39 @@ class UserController(
             ApiResponse(
             success = true,
             message = "로그인에 성공했습니다",
-            data = loginResponse // (수정) 실제 DTO 반환
+            data = loginResponse
         )
         )
-
-        // (참고) Service에서 던진 IllegalArgumentException 등은 @RestControllerAdvice에서
-        // 401(UNAUTHORIZED) 또는 400(BAD_REQUEST)으로 처리하는 것이 좋습니다.
     }
 
+    // 아이디 찾기 (POST /api/users/find-id)
+    @PostMapping("/find-id")
+    fun findId(@Valid @RequestBody request: FindIdRequest): ResponseEntity<ApiResponse<String>> {
+        val loginId = userService.findLoginId(request)
+        return ResponseEntity.ok(
+            ApiResponse(
+                success = true,
+                message = "아이디 찾기 성공",
+                data = loginId
+            )
+        )
+    }
+
+    // 비밀번호 찾기/재설정 (POST /api/users/reset-password)
+    @PostMapping("/reset-password")
+    fun findPassword(@Valid @RequestBody request: FindPasswordRequest): ResponseEntity<ApiResponse<String>> {
+        val tempPassword = userService.resetPassword(request)
+        return ResponseEntity.ok(
+            ApiResponse(
+                success = true,
+                message = "임시 비밀번호가 발급되었습니다.",
+                data = tempPassword // 실제 서비스에서는 보안상 이메일로 보내지만, 프로젝트용으로 직접 반환
+            )
+        )
+    }
+
+
+    // ID기반 사용자 조회
     @GetMapping("/{userId}")
     fun getUser(@PathVariable userId: Long): ResponseEntity<ApiResponse<UserResponse>> {
         val user = userService.getUserById(userId)
@@ -61,6 +90,7 @@ class UserController(
         )
     }
 
+    // 프로필 업데이트
     @PutMapping("/{userId}/profile")
     fun updateProfile(
         @PathVariable userId: Long,
@@ -76,6 +106,7 @@ class UserController(
         )
     }
 
+    // 비밀번호 변경
     @PutMapping("/{userId}/password")
     fun changePassword(
         @PathVariable userId: Long,
@@ -90,6 +121,7 @@ class UserController(
         )
     }
 
+    // 회원탈퇴
     @DeleteMapping("/{userId}")
     fun deleteAccount(@PathVariable userId: Long): ResponseEntity<ApiResponse<Unit>> {
         userService.deleteAccount(userId)

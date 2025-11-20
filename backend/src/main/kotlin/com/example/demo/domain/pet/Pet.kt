@@ -19,13 +19,13 @@ class Pet(
     @Enumerated(EnumType.STRING) // "SMALL", "MEDIUM", "BIG" 문자열로 저장
     var size: Size,
 
-    var birthDate: LocalDate? = null, // 생일 (선택)
+    var birthDate: LocalDate? = null,
 
-    var weight: Double? = null, // 몸무게 (선택)
+    var weight: Double? = null,
 
-    var specialNotes: String? = null, // 특이사항 (선택)
+    var specialNotes: String? = null,
 
-    // 펫(N) : 유저(1) 관계입니다.
+    // 펫(N) : 유저(1) 관계
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false) // DB에 'user_id' 컬럼 생성
     var owner: User
@@ -42,7 +42,7 @@ class Pet(
     var updatedAt: LocalDateTime = LocalDateTime.now()
         protected set
 
-    // 3. (추가) 펫 정보 수정을 위한 헬퍼 메서드
+    // 펫 정보 수정을 위한 메서드
     fun updateInfo(name: String, gender: PetGender, size: Size, birthDate: LocalDate?, weight: Double?, specialNotes: String?) {
         this.name = name
         this.gender = gender
@@ -54,7 +54,6 @@ class Pet(
     }
 }
 
-// 펫의 성별 (선택지)
 enum class PetGender {
     MALE, FEMALE, UNKNOWN
 }

@@ -10,15 +10,10 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api") // (공통 주소 /api)
+@RequestMapping("/api")
 class PetController(
     private val petService: PetService
 ) {
-
-    /**
-     * 1. 펫 등록 (C)
-     * POST /api/users/{userId}/pets
-     */
     @PostMapping("/users/{userId}/pets")
     fun createPet(
         @PathVariable ownerId: Long,
@@ -30,10 +25,7 @@ class PetController(
             .body(ApiResponse(success = true, message = "반려동물이 등록되었습니다.", data = petResponse))
     }
 
-    /**
-     * 2. 특정 사용자의 모든 펫 조회 (R)
-     * GET /api/users/{userId}/pets
-     */
+    // 사용자의 모든 펫 조회
     @GetMapping("/users/{userId}/pets")
     fun getPetsByUserId(
         @PathVariable ownerId: Long
@@ -43,11 +35,6 @@ class PetController(
         return ResponseEntity.ok(ApiResponse(success = true, message = "반려동물 목록 조회 성공.", data = pets))
     }
 
-    /**
-     * 3. 펫 정보 수정 (U)
-     * PUT /api/pets/{petId}
-     * (보안상: 실제로는 userId를 *로그인 토큰*에서 꺼내야 하지만, 지금은 파라미터로 받습니다)
-     */
     @PutMapping("/users/{userId}/pets/{petId}")
     fun updatePet(
         @PathVariable ownerId: Long, // (보안상: 나중에 토큰으로 대체)
@@ -59,11 +46,6 @@ class PetController(
         return ResponseEntity.ok(ApiResponse(success = true, message = "반려동물 정보가 수정되었습니다.", data = updatedPet))
     }
 
-    /**
-     * 4. 펫 삭제 (D)
-     * DELETE /api/pets/{petId}
-     * (보안상: 실제로는 userId를 *로그인 토큰*에서 꺼내야 하지만, 지금은 파라미터로 받습니다)
-     */
     @DeleteMapping("/users/{userId}/pets/{petId}")
     fun deletePet(
         @PathVariable ownerId: Long, // (보안상: 나중에 토큰으로 대체)

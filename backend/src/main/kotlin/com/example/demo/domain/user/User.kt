@@ -20,6 +20,7 @@ class User(
     @Column(length = 500)
     var profileImage: String? = null,
 
+    // 주인(1) : 펫(N) 관계
     @OneToMany(mappedBy = "owner", cascade = [CascadeType.ALL], orphanRemoval = true)
     val pets: MutableList<Pet> = mutableListOf()
 ){
@@ -56,6 +57,7 @@ class User(
         this.updatedAt = LocalDateTime.now()
     }
 
+    // 회원탈퇴시 isActive = false로 만들어 관리
     fun deactivate() {
         this.isActive = false
         this.updatedAt = LocalDateTime.now()
