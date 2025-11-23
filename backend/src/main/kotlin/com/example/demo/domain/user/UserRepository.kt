@@ -18,4 +18,7 @@ interface UserRepository : JpaRepository<User, Long> {
 
         // 데이터베이스에  '로그인 ID'를 가진 사용자가 있는지 찾는 버튼
         fun existsByLoginId(loginId: String): Boolean
+
+        // 닉네임 중복 확인
+        fun existsByNickname(nickname: String): Boolean
 }
