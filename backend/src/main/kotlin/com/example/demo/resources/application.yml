@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    # AWS 서버 안에서 돌릴 때, 자기 자신(localhost)의 MySQL에 접속하라는 뜻입니다.
+    url: jdbc:mysql://localhost:3306/se_project_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: se_user
+    password: se_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      # 서버가 켜질 때, DB에 테이블이 없으면 자동으로 만들어줍니다.
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+
+  # 파일 업로드 용량 제한 (10MB)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# 파일 업로드 경로
+file:
+  upload-dir: ./uploads/

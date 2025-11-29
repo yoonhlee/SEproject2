@@ -28,15 +28,24 @@ class SecurityConfig(
             .csrf { it.disable() } // REST API는 CSRF 불필요
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) } // 세션 미사용
             .authorizeHttpRequests {
-                it.requestMatchers(
-                    "/",
-                    "/api/users/signup", "/api/users/login",
-                    "/api/users/find-id", "/api/users/reset-password",
-                    "/api/images/**", // 이미지는 누구나 볼 수 있게
-                    "/api/map/**", "/api/places/**", "/api/wizard/**" // 지도, 장소 조회는 로그인 없이도 가능하게? (정책에 따라 변경)
-                ).permitAll()
-                    .anyRequest().authenticated() // 나머지는 로그인 필요
-            }
+    it.requestMatchers(
+        "/",
+        "/api/users/signup", 
+        "/api/users/login",
+        "/api/users/find-id", 
+        "/api/users/reset-password",
+        "/api/images/**",
+        "/api/map/**", 
+        "/api/places/**", 
+        "/api/wizard/**",
+        
+        // [추가] Swagger 관련 경로 허용
+        "/v3/api-docs/**",
+        "/swagger-ui/**",
+        "/swagger-ui.html"
+    ).permitAll()
+    .anyRequest().authenticated()
+}
             .addFilterBefore(
                 JwtAuthenticationFilter(jwtTokenProvider),
                 UsernamePasswordAuthenticationFilter::class.java

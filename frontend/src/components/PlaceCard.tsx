@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./ui/ImageWithFallback"; // 경로 수정됨
 
 interface PlaceCardProps {
   id: number;
