@@ -8,41 +8,42 @@ import com.example.demo.global.entity.BaseTimeEntity
 
 
 @Entity
-@Table(name = "pets") // DB에 'pets' 테이블 생성
+@Table(name = "pets")
 class Pet(
     @Column(nullable = false)
     var name: String,
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING) // "MALE", "FEMALE" 문자열로 저장
+    @Enumerated(EnumType.STRING)
     var gender: PetGender,
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING) // "SMALL", "MEDIUM", "BIG" 문자열로 저장
+    @Enumerated(EnumType.STRING)
     var size: Size,
 
     var birthDate: LocalDate? = null,
+    
+    // [추가] 나이 필드 추가
+    var age: Int = 0, 
 
     var weight: Double? = null,
-
     var specialNotes: String? = null,
 
-    // 펫(N) : 유저(1) 관계
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false) // DB에 'user_id' 컬럼 생성
+    @JoinColumn(name = "user_id", nullable = false)
     var owner: User
 
 ): BaseTimeEntity() {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val petId: Long = 0
 
-    // 펫 정보 수정을 위한 메서드
-    fun updateInfo(name: String, gender: PetGender, size: Size, birthDate: LocalDate?, weight: Double?, specialNotes: String?) {
+    // [수정] updateInfo에 age 추가
+    fun updateInfo(name: String, gender: PetGender, size: Size, birthDate: LocalDate?, age: Int, weight: Double?, specialNotes: String?) {
         this.name = name
         this.gender = gender
         this.size = size
         this.birthDate = birthDate
+        this.age = age // [추가]
         this.weight = weight
         this.specialNotes = specialNotes
     }

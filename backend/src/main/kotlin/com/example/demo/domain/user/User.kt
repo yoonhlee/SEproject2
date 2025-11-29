@@ -2,6 +2,8 @@ package com.example.demo.domain.user
 import com.example.demo.domain.pet.Pet
 import jakarta.persistence.*
 import com.example.demo.global.entity.BaseTimeEntity
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 @Entity
 @Table(name = "users")
 class User (
@@ -20,10 +22,16 @@ class User (
     @Column(length = 500)
     var profileImage: String? = null,
 
-    // 주인(1) : 펫(N) 관계
+    // [추가된 필드들]
+    var name: String? = null,
+    var birthdate: String? = null,
+    var phone: String? = null,
+    var address: String? = null,
+
+    @JsonIgnore
     @OneToMany(mappedBy = "owner", cascade = [CascadeType.ALL], orphanRemoval = true)
     val pets: MutableList<Pet> = mutableListOf()
-): BaseTimeEntity(){
+): BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
@@ -38,8 +46,14 @@ class User (
     var isActive: Boolean = true
         protected set
 
-    fun updateProfile(nickname: String, profileImage: String?) {
+    // [중요] UserService에서 호출하는 메서드와 파라미터가 일치해야 함
+    fun updateProfile(nickname: String, email: String, name: String?, birthdate: String?, phone: String?, address: String?, profileImage: String?) {
         this.nickname = nickname
+        this.email = email
+        this.name = name
+        this.birthdate = birthdate
+        this.phone = phone
+        this.address = address
         this.profileImage = profileImage
     }
 
@@ -47,7 +61,6 @@ class User (
         this.passwordHash = newPasswordHash
     }
 
-    // 회원탈퇴시 isActive = false로 만들어 관리
     fun deactivate() {
         this.isActive = false
     }

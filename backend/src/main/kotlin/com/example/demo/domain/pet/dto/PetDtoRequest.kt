@@ -9,6 +9,7 @@ data class PetDtoCreateRequest(
     val gender: PetGender,
     val size: Size,
     val birthDate: LocalDate? = null,
+    val age: Int = 0, // [추가]
     val weight: Double? = null,
     val specialNotes: String? = null
 )
@@ -18,6 +19,7 @@ data class PetDtoUpdateRequest(
     val gender: PetGender,
     val size: Size,
     val birthDate: LocalDate? = null,
+    val age: Int = 0, // [추가]
     val weight: Double? = null,
     val specialNotes: String? = null
 )

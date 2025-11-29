@@ -49,11 +49,19 @@ data class FindPasswordRequest(
     val email: String?
 )
 
+// [수정된 부분] 프로필 수정 요청 (필드 추가됨)
 data class UpdateProfileRequest(
     @field:NotBlank(message = "닉네임을 입력해주세요.")
     @field:Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다")
     val nickname: String?,
 
+    @field:NotBlank(message = "이메일을 입력해주세요.")
+    val email: String?,
+
+    val name: String? = null,
+    val birthdate: String? = null,
+    val phone: String? = null,
+    val address: String? = null,
     val profileImage: String? = null
 )
 

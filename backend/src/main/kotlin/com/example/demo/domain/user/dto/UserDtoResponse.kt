@@ -11,6 +11,12 @@ data class UserResponse(
     val email: String,
     val nickname: String,
     val profileImage: String?,
+    // [추가]
+    val name: String?,
+    val birthdate: String?,
+    val phone: String?,
+    val address: String?,
+    
     val role: UserRole,
     val pets: List<PetProfileDto>,
     val createdAt: LocalDateTime,
@@ -24,6 +30,12 @@ data class UserResponse(
                 email = user.email,
                 nickname = user.nickname,
                 profileImage = user.profileImage,
+                // [추가 매핑]
+                name = user.name,
+                birthdate = user.birthdate,
+                phone = user.phone,
+                address = user.address,
+                
                 role = user.role,
                 pets = user.pets.map { pet ->
                     PetProfileDto(

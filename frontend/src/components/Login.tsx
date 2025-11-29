@@ -39,14 +39,40 @@ export function Login({ onLogin, onSignup, onFindAccount, onBack }: LoginProps) 
     <div className="min-h-screen bg-white flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         <div className="p-8 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex flex-col items-center mb-8"><button onClick={onBack}><img src={logoImage} className="h-24 mb-4" /></button><p className="text-gray-600">로그인</p></div>
-          {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded">{error}</div>}
-          <div className="space-y-4 mb-6">
-            <div><Label>아이디</Label><Input value={username} onChange={(e) => setUsername(e.target.value)} className="mt-1" /></div>
-            <div><Label>비밀번호</Label><div className="relative mt-1"><Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} /><button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><Eye className="w-5 h-5" /></button></div></div>
+          <div className="flex flex-col items-center mb-8">
+            <button onClick={onBack}><img src={logoImage} className="h-24 mb-4" alt="로고" /></button>
+            <p className="text-gray-600">로그인</p>
           </div>
+          
+          {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded">{error}</div>}
+          
+          <div className="space-y-4 mb-6">
+            <div>
+                <Label>아이디</Label>
+                <Input value={username} onChange={(e) => setUsername(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+                <Label>비밀번호</Label>
+                <div className="relative mt-1">
+                    <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                </div>
+            </div>
+          </div>
+          
           <Button onClick={handleLogin} className="w-full bg-yellow-300 hover:bg-yellow-400 text-gray-900 h-12 mb-4">로그인</Button>
-          <div className="flex justify-center gap-4 mb-6"><button onClick={onSignup} className="text-sm text-gray-600 hover:underline">회원가입</button><span className="text-gray-300">|</span><button onClick={() => onFindAccount("id")} className="text-sm text-gray-600">아이디/비번 찾기</button></div>
+          
+          {/* [수정] 버튼 배치 변경: 아이디 찾기 | 비밀번호 찾기 | 회원가입 */}
+          <div className="flex justify-center gap-4 mb-6 text-sm text-gray-600">
+            <button onClick={() => onFindAccount("id")} className="hover:underline">아이디 찾기</button>
+            <span className="text-gray-300">|</span>
+            <button onClick={() => onFindAccount("password")} className="hover:underline">비밀번호 찾기</button>
+            <span className="text-gray-300">|</span>
+            <button onClick={onSignup} className="hover:underline font-medium">회원가입</button>
+          </div>
+          
           <Button onClick={onBack} variant="ghost" className="w-full">돌아가기</Button>
         </div>
       </div>

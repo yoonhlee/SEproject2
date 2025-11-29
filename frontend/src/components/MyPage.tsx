@@ -12,7 +12,6 @@ import { ProfileEditDialog } from "./ProfileEditDialog";
 import { AccountManagement } from "./AccountManagement";
 import { PetDetail } from "./PetDetail";
 import { PetForm } from "./PetForm"; 
-// [추가] 펫 수정용 다이얼로그 임포트
 import { PetEditDialog } from "./PetEditDialog";
 import { API_BASE_URL } from "../lib/constants"; 
 
@@ -43,6 +42,7 @@ interface MyPageProps {
 }
 
 export function MyPage({ onBack, onLogout }: MyPageProps) {
+  // 1. 상태 선언 (State)
   const [user, setUser] = useState<any>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]); 
@@ -55,6 +55,11 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   const [showPetEdit, setShowPetEdit] = useState(false);
   const [showAddPet, setShowAddPet] = useState(false);
 
+  // 2. 변수 정의 (Computed Variables) - [중요] 위치가 여기여야 에러가 안 납니다!
+  // selectedPetId가 있을 때 pets 배열에서 해당 펫을 찾습니다.
+  const selectedPet = selectedPetId ? pets.find((p) => p.id === selectedPetId) : null;
+
+  // 3. 데이터 불러오기 함수
   const fetchMyData = useCallback(async () => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
@@ -66,7 +71,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
 
     try {
       setLoading(true);
-      // 1. 사용자 정보 조회
+      
       const userRes = await fetch(`${API_BASE_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -77,17 +82,18 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
       
       if (userData.success) {
           setUser({
-              name: userData.data.nickname,
+              name: userData.data.name || userData.data.nickname,
               nickname: userData.data.nickname,
               email: userData.data.email,
-              phone: "010-0000-0000",
-              birthdate: "20000101",
-              address: "주소 정보 없음",
+              phone: userData.data.phone || "010-0000-0000",
+              birthdate: userData.data.birthdate || "",
+              address: userData.data.address || "",
               profilePhoto: userData.data.profileImage
           });
+      } else {
+          throw new Error(userData.message);
       }
 
-      // 2. 반려동물 목록 조회
       const petRes = await fetch(`${API_BASE_URL}/api/users/${userId}/pets`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -98,10 +104,10 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
               id: p.petId,
               name: p.name,
               breed: "품종 정보 없음", 
-              age: 0, // 나이는 생일로 계산하거나 별도 로직 필요
+              age: p.age,
               size: p.size,
               gender: p.gender,
-              birthday: p.birthDate ? p.birthDate.replace(/-/g, "") : "", // YYYY-MM-DD -> YYYYMMDD 변환
+              birthday: p.birthDate ? p.birthDate.replace(/-/g, "") : "", 
               weight: p.weight,
               personality: p.specialNotes
           }));
@@ -120,7 +126,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     fetchMyData();
   }, [fetchMyData]);
 
-  // 프로필 수정
+  // 4. 핸들러 함수들
   const handleProfileUpdate = async (newNickname: string) => {
     const token = localStorage.getItem("accessToken");
     if (!token) return;
@@ -134,6 +140,11 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         },
         body: JSON.stringify({
           nickname: newNickname,
+          email: user.email, 
+          name: user.name,
+          birthdate: user.birthdate,
+          phone: user.phone,
+          address: user.address,
           profileImage: user.profilePhoto
         }),
       });
@@ -141,12 +152,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
       const result = await response.json();
       
       if (result.success) {
-        setUser((prev: any) => ({ 
-            ...prev, 
-            nickname: result.data.nickname,
-            name: result.data.nickname,
-            profilePhoto: result.data.profileImage
-        }));
+        fetchMyData();
         setShowProfileEdit(false);
       } else {
         alert(result.message || "프로필 수정에 실패했습니다.");
@@ -157,11 +163,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   };
 
   const handlePetClick = (petId: number) => { setSelectedPetId(petId); };
-  
-  // [수정] 펫 수정 다이얼로그 열기
   const handlePetEdit = () => { setShowPetEdit(true); };
-
-  // [추가] 펫 삭제 로직 (실제 API 호출)
+  
   const handlePetDelete = async () => { 
     if (!selectedPetId) return;
     if (!window.confirm("정말로 삭제하시겠습니까?")) return;
@@ -177,8 +180,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
 
         if (res.ok) {
             alert("반려동물이 삭제되었습니다.");
-            setSelectedPetId(null); // 목록 화면으로 돌아가기
-            fetchMyData(); // 목록 갱신
+            setSelectedPetId(null);
+            fetchMyData();
         } else {
             alert("삭제에 실패했습니다.");
         }
@@ -187,25 +190,23 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     }
   };
 
-  // 날짜 변환 헬퍼 (YYYYMMDD -> YYYY-MM-DD)
   const formatBirthDate = (dateStr: string) => {
     if (!dateStr || dateStr.length !== 8) return null;
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
   };
 
-  // [수정] 펫 추가 로직 (데이터 매핑 적용)
   const handleAddPetSubmit = async (petData: any) => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
     
-    // 백엔드 DTO 형식에 맞춰 데이터 변환
     const requestBody = {
         name: petData.name,
         gender: petData.gender,
         size: petData.size,
         birthDate: formatBirthDate(petData.birthday),
-        weight: petData.weight,
-        specialNotes: petData.personality // personality -> specialNotes 매핑
+        age: petData.age, 
+        weight: Number(petData.weight) || null,
+        specialNotes: petData.personality 
     };
 
     try {
@@ -219,24 +220,23 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
             setShowAddPet(false);
             fetchMyData(); 
         } else {
-            alert("등록에 실패했습니다. 입력 정보를 확인해주세요.");
+            alert("등록에 실패했습니다.");
         }
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
-  // [추가] 펫 수정 로직 (실제 API 호출)
   const handleUpdatePetSubmit = async (petData: any) => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
     if (!selectedPetId) return;
 
-    // 백엔드 DTO 형식에 맞춰 데이터 변환
     const requestBody = {
         name: petData.name,
         gender: petData.gender,
         size: petData.size,
         birthDate: formatBirthDate(petData.birthday),
-        weight: petData.weight,
+        age: petData.age,
+        weight: Number(petData.weight) || null,
         specialNotes: petData.personality
     };
 
@@ -249,13 +249,30 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         if (res.ok) {
             alert("정보가 수정되었습니다.");
             setShowPetEdit(false);
-            fetchMyData(); // 데이터 갱신
+            fetchMyData();
         } else {
             alert("수정에 실패했습니다.");
         }
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
+  const handleDeleteAccount = async () => {
+    const token = localStorage.getItem("accessToken");
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/users/me`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+            alert("탈퇴가 완료되었습니다.");
+            onLogout();
+        } else {
+            alert("탈퇴 처리에 실패했습니다.");
+        }
+    } catch (e) { alert("오류가 발생했습니다."); }
+  };
+
+  // 5. 조건부 렌더링 (Return)
   if (loading && !user) return <div className="flex h-screen items-center justify-center">로딩중...</div>;
   
   if (error || !user) return (
@@ -268,9 +285,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
 
   if (showAddPet) return <PetForm onSubmit={handleAddPetSubmit} onBack={() => setShowAddPet(false)} />;
 
-  const selectedPet = selectedPetId ? pets.find((p) => p.id === selectedPetId) : null;
-  
-  // [수정] 상세 페이지 렌더링 시 수정 다이얼로그도 함께 포함
   if (selectedPet) {
     return (
       <>
@@ -280,7 +294,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
             onEdit={handlePetEdit} 
             onDelete={handlePetDelete} 
         />
-        {/* 수정 모달 (selectedPet이 있을 때만 렌더링) */}
+        {/* 수정 모달: selectedPet이 확실히 있을 때만 렌더링 */}
         {showPetEdit && (
             <PetEditDialog 
                 open={showPetEdit} 
@@ -294,7 +308,14 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   }
 
   if (showAccountManagement) {
-    return <AccountManagement user={user} onBack={() => setShowAccountManagement(false)} onUpdateField={() => {}} onDeleteAccount={() => { alert("탈퇴 기능 준비중"); }} />;
+    return (
+      <AccountManagement 
+        user={user} 
+        onBack={() => setShowAccountManagement(false)} 
+        onUserUpdate={fetchMyData} 
+        onDeleteAccount={handleDeleteAccount} 
+      />
+    );
   }
 
   const profileInitial = user.nickname ? user.nickname.charAt(0) : "U";
@@ -334,7 +355,17 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
                     <div key={pet.id} className="border border-gray-200 rounded-xl p-4 relative cursor-pointer hover:border-yellow-300 transition-colors" onClick={() => handlePetClick(pet.id)}>
                     <div className="flex items-start justify-between mb-3">
                         <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center"><Dog className="w-6 h-6 text-gray-500" /></div>
-                        <button className="text-gray-400 hover:text-gray-600"><Edit2 className="w-4 h-4" /></button>
+                        {/* [수정] 카드 위 수정 버튼을 누르면 이벤트 전파를 막고 바로 수정창을 띄움 */}
+                        <button 
+                            className="text-gray-400 hover:text-gray-600"
+                            onClick={(e) => {
+                                e.stopPropagation(); // 카드 클릭(상세페이지 이동) 방지
+                                handlePetClick(pet.id); // 선택된 펫 설정
+                                setShowPetEdit(true);   // 수정창 열기
+                            }}
+                        >
+                            <Edit2 className="w-4 h-4" />
+                        </button>
                     </div>
                     <h3 className="mb-1">{pet.name}</h3>
                     <p className="text-sm text-gray-600 mb-1">{pet.breed}</p>

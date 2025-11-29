@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import logoImage from "../assets/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
 
@@ -19,12 +18,22 @@ export function PetForm({ pet, onSubmit, onBack }: PetFormProps) {
     age: pet?.age || 0,
     size: pet?.size || "",
     birthday: pet?.birthday || "",
-    weight: pet?.weight || undefined,
+    weight: pet?.weight || "", // 빈 문자열로 초기화하여 입력 편의성 증대
     personality: pet?.personality || "",
   });
 
   const handleChange = (field: string, value: any) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  // [추가] 숫자 입력 핸들러 (음수 방지)
+  const handleNumberChange = (field: string, value: string) => {
+    const num = parseFloat(value);
+    if (value === "") {
+        setFormData({ ...formData, [field]: "" });
+    } else if (num >= 0) {
+        setFormData({ ...formData, [field]: num });
+    }
   };
 
   const handleSubmit = () => {
@@ -51,13 +60,45 @@ export function PetForm({ pet, onSubmit, onBack }: PetFormProps) {
           <div className="space-y-6">
             <div><Label>이름 *</Label><Input value={formData.name} onChange={(e) => handleChange("name", e.target.value)} className="mt-1" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>성별 *</Label><Select value={formData.gender} onValueChange={(val) => handleChange("gender", val)}><SelectTrigger className="mt-1"><SelectValue placeholder="선택" /></SelectTrigger><SelectContent><SelectItem value="MALE">수컷</SelectItem><SelectItem value="FEMALE">암컷</SelectItem></SelectContent></Select></div>
-              <div><Label>나이</Label><Input type="number" value={formData.age} onChange={(e) => handleChange("age", parseInt(e.target.value))} className="mt-1" /></div>
+              <div>
+                  <Label>성별 *</Label>
+                  <Select value={formData.gender} onValueChange={(val) => handleChange("gender", val)}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="선택" /></SelectTrigger>
+                      <SelectContent><SelectItem value="MALE">수컷</SelectItem><SelectItem value="FEMALE">암컷</SelectItem></SelectContent>
+                  </Select>
+              </div>
+              <div>
+                  <Label>나이 (살)</Label>
+                  {/* [수정] 음수 방지 적용 */}
+                  <Input type="number" min="0" value={formData.age} onChange={(e) => handleNumberChange("age", e.target.value)} className="mt-1" />
+              </div>
             </div>
-            <div><Label>크기 *</Label><Select value={formData.size} onValueChange={(val) => handleChange("size", val)}><SelectTrigger className="mt-1"><SelectValue placeholder="선택" /></SelectTrigger><SelectContent><SelectItem value="SMALL">소형견</SelectItem><SelectItem value="MEDIUM">중형견</SelectItem><SelectItem value="BIG">대형견</SelectItem></SelectContent></Select></div>
-            <div><Label>생일 (YYYYMMDD)</Label><Input value={formData.birthday} onChange={(e) => handleChange("birthday", e.target.value)} className="mt-1" /></div>
-            <div><Label>몸무게 (kg)</Label><Input type="number" value={formData.weight} onChange={(e) => handleChange("weight", parseFloat(e.target.value))} className="mt-1" /></div>
-            <div><Label>성격</Label><Textarea value={formData.personality} onChange={(e) => handleChange("personality", e.target.value)} className="mt-1" /></div>
+            <div>
+                <Label>크기 *</Label>
+                <Select value={formData.size} onValueChange={(val) => handleChange("size", val)}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="선택" /></SelectTrigger>
+                    <SelectContent><SelectItem value="SMALL">소형견</SelectItem><SelectItem value="MEDIUM">중형견</SelectItem><SelectItem value="BIG">대형견</SelectItem></SelectContent>
+                </Select>
+            </div>
+            <div><Label>생일 (YYYYMMDD)</Label><Input value={formData.birthday} onChange={(e) => handleChange("birthday", e.target.value)} className="mt-1" placeholder="선택사항" /></div>
+            <div>
+                <Label>몸무게 (kg)</Label>
+                {/* [수정] 음수 방지 적용 */}
+                <Input type="number" min="0" value={formData.weight} onChange={(e) => handleNumberChange("weight", e.target.value)} className="mt-1" placeholder="선택사항" />
+            </div>
+            
+            {/* [수정] 성격 입력 방식 변경 (Textarea -> Select) */}
+            <div>
+                <Label>성격</Label>
+                <Select value={formData.personality} onValueChange={(val) => handleChange("personality", val)}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="성격을 선택해주세요" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="활발">활발</SelectItem>
+                        <SelectItem value="소심">소심</SelectItem>
+                        <SelectItem value="평범">평범</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
           </div>
           <div className="flex gap-3 mt-8">
             <Button onClick={onBack} variant="outline" className="flex-1">취소</Button>

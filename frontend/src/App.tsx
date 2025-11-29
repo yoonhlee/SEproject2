@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Header } from "./components/Header";
 import { Login } from "./components/Login";
 import { Signup } from "./components/Signup";
-// import { FindAccount } from "./components/FindAccount"; // 사용하지 않으면 주석 처리
+// [수정] 주석 해제 (아이디/비번 찾기 페이지 사용)
+import { FindAccount } from "./components/FindAccount";
 import { MyPage } from "./components/MyPage";
 import { PetForm } from "./components/PetForm";
 import { WizardDialog } from "./components/WizardDialog";
@@ -13,14 +14,11 @@ import { ThemeSection } from "./components/ThemeSection";
 import { MapView } from "./components/MapView";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
-// [수정] SplashScreen 임포트 삭제
-// import { SplashScreen } from "./components/SplashScreen";
 import { API_BASE_URL } from "./lib/constants";
 
 type Page = "main" | "login" | "signup" | "findId" | "findPassword" | "mypage" | "addPet" | "editPet" | "search" | "placeDetail";
 
 export default function App() {
-  // [수정] 시작 페이지를 "splash"가 아닌 "main"으로 변경
   const [currentPage, setCurrentPage] = useState<Page>("main");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -32,7 +30,6 @@ export default function App() {
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 백엔드 데이터 상태
   const [places, setPlaces] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
 
@@ -126,11 +123,22 @@ export default function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      // [수정] case "splash" 삭제됨
       case "login":
-        return <Login onLogin={handleLoginSuccess} onSignup={() => setCurrentPage("signup")} onFindAccount={() => {}} onBack={() => setCurrentPage("main")} />;
+        return <Login 
+            onLogin={handleLoginSuccess} 
+            onSignup={() => setCurrentPage("signup")} 
+            // [수정] 아이디/비밀번호 찾기 페이지로 이동 연결
+            onFindAccount={(type) => setCurrentPage(type === "id" ? "findId" : "findPassword")} 
+            onBack={() => setCurrentPage("main")} 
+        />;
       case "signup":
         return <Signup onSignup={() => setCurrentPage("login")} onBack={() => setCurrentPage("main")} />;
+      // [추가] 아이디 찾기 페이지
+      case "findId":
+        return <FindAccount type="id" onBack={() => setCurrentPage("login")} />;
+      // [추가] 비밀번호 찾기 페이지
+      case "findPassword":
+        return <FindAccount type="password" onBack={() => setCurrentPage("login")} />;
       case "mypage":
         return <MyPage onBack={() => setCurrentPage("main")} onLogout={handleLogout} />;
       case "placeDetail":
@@ -139,7 +147,6 @@ export default function App() {
       case "search":
         return <SearchPage places={places} initialQuery={searchQuery} onBack={() => setCurrentPage("main")} onPlaceClick={handlePlaceClick} onWizardClick={() => setShowWizard(true)} onFilterClick={() => setShowFilter(true)} isLoggedIn={isLoggedIn} onLoginClick={() => setCurrentPage("login")} onSignupClick={() => setCurrentPage("signup")} onLogoutClick={handleLogout} onMyPageClick={() => setCurrentPage("mypage")} />;
       case "addPet":
-        // 이 부분은 MyPage 내부 모달로 처리되므로 사실상 안 쓰이지만 유지
         return <PetForm onSubmit={() => {}} onBack={() => setCurrentPage("mypage")} />;
       case "main":
       default:
