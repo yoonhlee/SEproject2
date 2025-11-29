@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+// [수정] DialogDescription 추가
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { PlaceCard } from "./PlaceCard";
 
 export function WizardDialog({ open, onClose, places, onPlaceClick }: any) {
@@ -11,7 +12,13 @@ export function WizardDialog({ open, onClose, places, onPlaceClick }: any) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
-        <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="text-yellow-400" /> 마법사 추천</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Sparkles className="text-yellow-400" /> 마법사 추천</DialogTitle>
+          {/* [추가] 접근성 경고 해결용 설명 (화면에는 안 보임) */}
+          <DialogDescription className="sr-only">
+            몇 가지 질문에 답하고 딱 맞는 장소를 추천받으세요.
+          </DialogDescription>
+        </DialogHeader>
         {step < questions.length ? (
           <div className="py-6 text-center">
             <h3 className="text-2xl mb-8">{questions[step].q}</h3>

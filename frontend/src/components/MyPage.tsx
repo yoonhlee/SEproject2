@@ -66,9 +66,9 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     const fetchData = async () => {
       try {
         // 1. 사용자 정보 조회
-        const userRes = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const userRes = await fetch(`${API_BASE_URL}/api/users/me`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
         
         if (!userRes.ok) {
             // 500 에러 등이 나면 여기서 잡힘

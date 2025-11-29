@@ -3,11 +3,13 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import logoImage from "figma:asset/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
+// [수정] Dialog 관련 컴포넌트 추가 임포트
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "./ui/dialog";
 
@@ -181,6 +183,10 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
             <DialogTitle>
               {type === "id" ? "아이디 찾기 결과" : "비밀번호 찾기 결과"}
             </DialogTitle>
+            {/* [수정] 접근성 경고 해결을 위한 설명 추가 */}
+            <DialogDescription>
+              요청하신 계정 정보 조회 결과입니다.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-600 mb-2">

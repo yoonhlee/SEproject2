@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "./ui/dialog";
+// [수정] DialogDescription, DialogHeader, DialogTitle 추가
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { X, Car, Wifi, Coffee, UtensilsCrossed, Trees, Waves, Dumbbell, Scissors } from "lucide-react";
 
@@ -24,7 +25,16 @@ export function FilterDialog({ open, onClose, onApply }: FilterDialogProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[500px] max-h-[90vh] overflow-y-auto p-0">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10 flex justify-between items-center">
-          <h2 className="text-lg">필터</h2><button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
+          {/* [수정] DialogHeader, Title, Description 추가 */}
+          <DialogHeader className="w-full text-left">
+             <div className="flex justify-between items-center">
+                <DialogTitle className="text-lg">필터</DialogTitle>
+                <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
+             </div>
+             <DialogDescription className="sr-only">
+               원하는 조건으로 장소를 검색해보세요.
+             </DialogDescription>
+          </DialogHeader>
         </div>
         <div className="px-6 py-6">
           <div className="mb-8"><h3 className="mb-4">편의시설</h3><div className="grid grid-cols-4 gap-3">{amenities.map(a => (

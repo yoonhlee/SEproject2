@@ -14,45 +14,48 @@ import org.springframework.web.bind.annotation.*
 class PetController(
     private val petService: PetService
 ) {
+    // 1. 펫 등록
     @PostMapping("/users/{userId}/pets")
     fun createPet(
-        @PathVariable ownerId: Long,
+        @PathVariable userId: Long, // [수정] ownerId -> userId 로 변경!
         @Valid @RequestBody request: PetDtoCreateRequest
     ): ResponseEntity<ApiResponse<PetDtoResponse>> {
-
-        val petResponse = petService.createPet(ownerId, request)
+        // [수정] 서비스 호출할 때도 userId 변수 사용
+        val petResponse = petService.createPet(userId, request)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse(success = true, message = "반려동물이 등록되었습니다.", data = petResponse))
     }
 
-    // 사용자의 모든 펫 조회
+    // 2. 펫 조회
     @GetMapping("/users/{userId}/pets")
     fun getPetsByUserId(
-        @PathVariable ownerId: Long
+        @PathVariable userId: Long // [수정] ownerId -> userId 로 변경!
     ): ResponseEntity<ApiResponse<List<PetDtoResponse>>> {
-
-        val pets = petService.getPetsByUserId(ownerId)
+        // [수정] 서비스 호출 시 userId 사용
+        val pets = petService.getPetsByUserId(userId)
         return ResponseEntity.ok(ApiResponse(success = true, message = "반려동물 목록 조회 성공.", data = pets))
     }
 
+    // 3. 펫 수정
     @PutMapping("/users/{userId}/pets/{petId}")
     fun updatePet(
-        @PathVariable ownerId: Long, // (보안상: 나중에 토큰으로 대체)
+        @PathVariable userId: Long, // [수정] ownerId -> userId 로 변경!
         @PathVariable petId: Long,
         @Valid @RequestBody request: PetDtoUpdateRequest
     ): ResponseEntity<ApiResponse<PetDtoResponse>> {
-
-        val updatedPet = petService.updatePet(ownerId, petId, request)
+        // [수정] 서비스 호출 시 userId 사용
+        val updatedPet = petService.updatePet(userId, petId, request)
         return ResponseEntity.ok(ApiResponse(success = true, message = "반려동물 정보가 수정되었습니다.", data = updatedPet))
     }
 
+    // 4. 펫 삭제
     @DeleteMapping("/users/{userId}/pets/{petId}")
     fun deletePet(
-        @PathVariable ownerId: Long, // (보안상: 나중에 토큰으로 대체)
+        @PathVariable userId: Long, // [수정] ownerId -> userId 로 변경!
         @PathVariable petId: Long
-    ): ResponseEntity<ApiResponse<Unit>> { // (데이터가 없으므로 Unit)
-
-        petService.deletePet(ownerId, petId)
+    ): ResponseEntity<ApiResponse<Unit>> {
+        // [수정] 서비스 호출 시 userId 사용
+        petService.deletePet(userId, petId)
         return ResponseEntity.ok(ApiResponse(success = true, message = "반려동물 정보가 삭제되었습니다."))
     }
 }
