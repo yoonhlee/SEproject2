@@ -91,4 +91,13 @@ class PlaceService(
 
         return places.map { PlaceDtoResponse.from(it) }
     }
+
+    // [추가] 장소 삭제 로직
+    @Transactional
+    fun deletePlace(placeId: Long) {
+        val place = placeRepository.findByIdOrNull(placeId)
+            ?: throw IllegalArgumentException("존재하지 않는 장소입니다.")
+        
+        placeRepository.delete(place)
+    }
 }

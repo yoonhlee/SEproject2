@@ -47,7 +47,7 @@ class SecurityConfig(
                     "/api/map/**", "/api/places/**",
                     "/v3/api-docs/**", "/swagger-ui/**"
                 ).permitAll()
-                .anyRequest().authenticated()
+                it.anyRequest().permitAll()
             }
             .addFilterBefore(
                 JwtAuthenticationFilter(jwtTokenProvider),

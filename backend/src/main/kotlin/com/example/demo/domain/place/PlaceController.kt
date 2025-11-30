@@ -53,4 +53,11 @@ class PlaceController(
         val places = placeService.searchPlaces(keyword)
         return ResponseEntity.ok(ApiResponse(success = true, message = "검색 결과 조회 성공", data = places))
     }
+    
+    // [추가] 장소 삭제 API
+    @DeleteMapping("/{placeId}")
+    fun deletePlace(@PathVariable placeId: Long): ResponseEntity<ApiResponse<Unit>> {
+        placeService.deletePlace(placeId)
+        return ResponseEntity.ok(ApiResponse(success = true, message = "장소가 삭제되었습니다."))
+    }
 }

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import logoImage from "figma:asset/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
-// [수정] Dialog 관련 컴포넌트 추가 임포트
+import logoImage from "../assets/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "./ui/dialog";
+import { API_BASE_URL } from "../lib/constants";
 
 interface FindAccountProps {
   type: "id" | "password";
@@ -24,31 +24,69 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
     birthdate: "",
     email: "",
     username: "",
-    phone: "",
+    // phone은 백엔드 로직상(이메일 인증) 사용하지 않으므로 email 재사용
   });
   const [error, setError] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState("");
 
-  const handleSubmit = () => {
-    if (type === "id") {
-      if (!formData.name || !formData.birthdate || !formData.email) {
-        setError("모든 항목을 입력해주세요.");
-        return;
-      }
-      // Mock result
-      setResult("user123");
-      setShowResult(true);
-    } else {
-      if (!formData.username || !formData.phone) {
-        setError("모든 항목을 입력해주세요.");
-        return;
-      }
-      // Mock result
-      setResult("password123!");
-      setShowResult(true);
-    }
+  const handleSubmit = async () => {
     setError("");
+
+    try {
+      if (type === "id") {
+        // [아이디 찾기]
+        // 백엔드는 이메일로 아이디를 찾습니다. (이름, 생년월일은 입력은 받되 API엔 이메일만 전송)
+        if (!formData.email) {
+          setError("이메일을 입력해주세요.");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/users/find-id`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setResult(data.data); // 찾은 아이디
+          setShowResult(true);
+        } else {
+          setError(data.message || "일치하는 회원 정보가 없습니다.");
+        }
+
+      } else {
+        // [비밀번호 찾기]
+        // 백엔드는 아이디 + 이메일로 사용자를 확인하고 임시 비밀번호를 줍니다.
+        if (!formData.username || !formData.email) {
+          setError("아이디와 이메일을 모두 입력해주세요.");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/users/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            loginId: formData.username, 
+            email: formData.email 
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setResult(data.data); // 임시 비밀번호
+          setShowResult(true);
+        } else {
+          setError(data.message || "일치하는 회원 정보가 없습니다.");
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setError("서버 연결 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -65,8 +103,8 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
             </h1>
             <p className="text-gray-600">
               {type === "id"
-                ? "가입 시 입력한 정보를 입력해주세요"
-                : "아이디와 휴대전화를 입력해주세요"}
+                ? "가입 시 등록한 이메일을 입력해주세요"
+                : "아이디와 이메일을 입력해주세요"}
             </p>
           </div>
 
@@ -81,6 +119,7 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
           <div className="space-y-4 mb-6">
             {type === "id" ? (
               <>
+                {/* 이름, 생년월일은 구색 맞추기용 (실제 찾기는 이메일로) */}
                 <div>
                   <Label htmlFor="name">이름</Label>
                   <Input
@@ -112,7 +151,7 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="email">이메일</Label>
+                  <Label htmlFor="email">이메일 *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -120,7 +159,7 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    placeholder="example@email.com"
+                    placeholder="가입 시 등록한 이메일"
                     className="mt-1"
                   />
                 </div>
@@ -128,7 +167,7 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
             ) : (
               <>
                 <div>
-                  <Label htmlFor="username">아이디</Label>
+                  <Label htmlFor="username">아이디 *</Label>
                   <Input
                     id="username"
                     type="text"
@@ -141,19 +180,17 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
                   />
                 </div>
 
+                {/* [수정] 휴대전화 -> 이메일로 변경 (백엔드 로직 일치화) */}
                 <div>
-                  <Label htmlFor="phone">휴대전화</Label>
+                  <Label htmlFor="email">이메일 *</Label>
                   <Input
-                    id="phone"
-                    value={formData.phone}
+                    id="email"
+                    type="email"
+                    value={formData.email}
                     onChange={(e) =>
-                      setFormData({ 
-                        ...formData, 
-                        phone: e.target.value.replace(/\D/g, "") 
-                      })
+                      setFormData({ ...formData, email: e.target.value })
                     }
-                    placeholder="01012345678"
-                    maxLength={11}
+                    placeholder="가입 시 등록한 이메일"
                     className="mt-1"
                   />
                 </div>
@@ -181,32 +218,34 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {type === "id" ? "아이디 찾기 결과" : "비밀번호 찾기 결과"}
+              {type === "id" ? "아이디 찾기 결과" : "임시 비밀번호 발급"}
             </DialogTitle>
-            {/* [수정] 접근성 경고 해결을 위한 설명 추가 */}
             <DialogDescription>
-              요청하신 계정 정보 조회 결과입니다.
+              {type === "id" ? "회원님의 아이디 정보입니다." : "로그인을 위한 임시 비밀번호입니다."}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 text-center">
             <p className="text-gray-600 mb-2">
               {type === "id"
                 ? "고객님의 아이디는 다음과 같습니다:"
-                : "고객님의 비밀번호는 다음과 같습니다:"}
+                : "아래 임시 비밀번호로 로그인해주세요:"}
             </p>
-            <p className="text-xl text-gray-900 bg-gray-100 p-4 rounded-lg text-center">
+            <p className="text-xl font-bold text-gray-900 bg-gray-100 p-4 rounded-lg break-all">
               {result}
             </p>
+            {type === "password" && (
+                <p className="text-xs text-red-500 mt-2">로그인 후 반드시 비밀번호를 변경해주세요.</p>
+            )}
           </div>
           <DialogFooter>
             <Button
               onClick={() => {
                 setShowResult(false);
-                onBack();
+                onBack(); // 로그인 화면으로 이동
               }}
-              className="bg-gradient-to-r from-yellow-200 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-gray-900"
+              className="w-full bg-gradient-to-r from-yellow-200 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-gray-900"
             >
-              확인
+              로그인 하러 가기
             </Button>
           </DialogFooter>
         </DialogContent>
