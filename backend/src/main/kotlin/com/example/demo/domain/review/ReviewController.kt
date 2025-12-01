@@ -15,8 +15,7 @@ import org.springframework.web.bind.annotation.*
 class ReviewController(
     private val reviewService: ReviewService
 ) {
-
-    // 리뷰 등록 (POST /api/places/{placeId}/reviews) (로그인한 유저 ID는 일단 파라미터로 받음)
+    // ... (기존 create, update, delete, getReviewsByPlace 함수 유지) ...
     @PostMapping("/places/{placeId}/reviews")
     fun createReview(
         @PathVariable placeId: Long,
@@ -28,7 +27,6 @@ class ReviewController(
             .body(ApiResponse(success = true, message = "리뷰가 등록되었습니다.", data = response))
     }
 
-    // 리뷰 수정 (PUT /api/reviews/{reviewId})
     @PutMapping("/reviews/{reviewId}")
     fun updateReview(
         @PathVariable reviewId: Long,
@@ -39,22 +37,29 @@ class ReviewController(
         return ResponseEntity.ok(ApiResponse(success = true, message = "리뷰가 수정되었습니다.", data = response))
     }
 
-    // 리뷰 삭제 (DELETE /api/reviews/{reviewId})
     @DeleteMapping("/reviews/{reviewId}")
     fun deleteReview(
         @PathVariable reviewId: Long,
         @AuthenticationPrincipal userId: Long
-        ): ResponseEntity<ApiResponse<Unit>> {
+    ): ResponseEntity<ApiResponse<Unit>> {
         reviewService.deleteReview(userId, reviewId)
         return ResponseEntity.ok(ApiResponse(success = true, message = "리뷰가 삭제되었습니다."))
     }
 
-    // 특정 장소의 리뷰 목록 조회 (GET /api/places/{placeId}/reviews)
     @GetMapping("/places/{placeId}/reviews")
     fun getReviewsByPlace(
         @PathVariable placeId: Long
     ): ResponseEntity<ApiResponse<List<ReviewDtoResponse>>> {
         val reviews = reviewService.getReviewsByPlace(placeId)
         return ResponseEntity.ok(ApiResponse(success = true, message = "", data = reviews))
+    }
+
+    // [추가] 내 리뷰 조회 API (GET /api/users/{userId}/reviews)
+    @GetMapping("/users/{userId}/reviews")
+    fun getReviewsByUserId(
+        @PathVariable userId: Long
+    ): ResponseEntity<ApiResponse<List<ReviewDtoResponse>>> {
+        val reviews = reviewService.getReviewsByUserId(userId)
+        return ResponseEntity.ok(ApiResponse(success = true, message = "내 리뷰 조회 성공", data = reviews))
     }
 }

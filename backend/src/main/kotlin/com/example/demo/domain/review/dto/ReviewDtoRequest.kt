@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size
 
 data class ReviewCreateRequest(
     @field:NotBlank(message = "20자 이상의 리뷰를 작성해 주십시오.")
-    @field:Size(min = 20, max = 1000, message = "20자 이상 1000자 내로 작성해 주십시오.")
+    @field:Size(min = 1, max = 1000, message = "1자 이상 1000자 내로 작성해 주십시오.")
     val content: String,
 
     @field:Min(1) @field:Max(5)
@@ -19,8 +19,8 @@ data class ReviewCreateRequest(
 )
 
 data class ReviewUpdateRequest(
-    @field:NotBlank(message = "20자 이상의 리뷰를 작성해 주십시오.")
-    @field:Size(min = 20, max = 1000, message = "20자 이상 1000자 내로 작성해 주십시오.")
+    @field:NotBlank(message = "내용을 입력해주세요.")
+    @field:Size(min = 1, max = 1000, message = "1자 이상 1000자 내로 작성해 주십시오.")
     val content: String,
 
     @field:Min(1) @field:Max(5)

@@ -11,6 +11,7 @@ data class ReviewDtoResponse(
     val photos: List<String>,
     val userId: Long,
     val placeId: Long,
+    val placeName: String, // [추가] 장소 이름 포함
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 ) {
@@ -24,6 +25,7 @@ data class ReviewDtoResponse(
                 photos = review.photos,
                 userId = review.user.userId,
                 placeId = review.place.placeId,
+                placeName = review.place.name, // [추가] 엔티티에서 이름 가져오기
                 createdAt = review.createdAt,
                 updatedAt = review.updatedAt
             )

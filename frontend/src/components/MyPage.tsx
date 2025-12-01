@@ -6,6 +6,8 @@ import {
   Dog,
   Settings,
   Edit2,
+  Star,
+  MessageSquare
 } from "lucide-react";
 import logoImage from "../assets/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
 import { ProfileEditDialog } from "./ProfileEditDialog";
@@ -25,7 +27,7 @@ interface Pet {
   birthday?: string;
   weight?: number;
   personality?: string;
-  photo?: string; // [추가] 사진 URL
+  photo?: string;
 }
 
 interface Review {
@@ -55,10 +57,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   const [showPetEdit, setShowPetEdit] = useState(false);
   const [showAddPet, setShowAddPet] = useState(false);
 
-  // 2. 변수 정의 (선택된 펫)
   const selectedPet = selectedPetId ? pets.find((p) => p.id === selectedPetId) : null;
 
-  // 3. 데이터 불러오기
   const fetchMyData = useCallback(async () => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
@@ -105,15 +105,33 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
               id: p.petId,
               name: p.name,
               breed: "품종 정보 없음", 
-              age: p.age, // [수정] DB의 age 값 사용
+              age: p.age,
               size: p.size,
               gender: p.gender,
               birthday: p.birthDate ? p.birthDate.replace(/-/g, "") : "", 
               weight: p.weight,
               personality: p.specialNotes,
-              photo: p.photo // [추가] DB의 photo 값 사용
+              photo: p.photo
           }));
           setPets(mappedPets);
+      }
+
+      // 3. 내 리뷰 목록 조회 (수정됨: API 호출 및 데이터 매핑)
+      const reviewRes = await fetch(`${API_BASE_URL}/api/users/${userId}/reviews`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const reviewData = await reviewRes.json();
+
+      if (reviewData.success) {
+          const mappedReviews = reviewData.data.map((r: any) => ({
+              id: r.reviewId,
+              placeId: r.placeId,
+              placeName: r.placeName, // 백엔드 DTO에 추가된 필드
+              rating: r.rating,
+              content: r.content,
+              date: new Date(r.createdAt).toLocaleDateString()
+          }));
+          setReviews(mappedReviews);
       }
 
     } catch (error: any) {
@@ -128,9 +146,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     fetchMyData();
   }, [fetchMyData]);
 
-  // 4. 핸들러 함수들
-  
-  // 프로필 수정 (닉네임 등)
   const handleProfileUpdate = async (newNickname: string) => {
     const token = localStorage.getItem("accessToken");
     if (!token) return;
@@ -169,7 +184,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   const handlePetClick = (petId: number) => { setSelectedPetId(petId); };
   const handlePetEdit = () => { setShowPetEdit(true); };
   
-  // 펫 삭제
   const handlePetDelete = async () => { 
     if (!selectedPetId) return;
     if (!window.confirm("정말로 삭제하시겠습니까?")) return;
@@ -200,7 +214,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
   };
 
-  // 펫 추가 (Create)
   const handleAddPetSubmit = async (petData: any) => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
@@ -210,10 +223,10 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         gender: petData.gender,
         size: petData.size,
         birthDate: formatBirthDate(petData.birthday),
-        age: petData.age, // [추가] 나이 전송
+        age: petData.age, 
         weight: Number(petData.weight) || null,
         specialNotes: petData.personality,
-        photo: petData.photo // [추가] 사진 URL 전송
+        photo: petData.photo
     };
 
     try {
@@ -232,7 +245,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
-  // 펫 수정 (Update)
   const handleUpdatePetSubmit = async (petData: any) => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
@@ -243,10 +255,10 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         gender: petData.gender,
         size: petData.size,
         birthDate: formatBirthDate(petData.birthday),
-        age: petData.age, // [추가] 나이 전송
+        age: petData.age,
         weight: Number(petData.weight) || null,
         specialNotes: petData.personality,
-        photo: petData.photo // [추가] 사진 URL 전송
+        photo: petData.photo
     };
 
     try {
@@ -265,7 +277,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
-  // 계정 탈퇴
   const handleDeleteAccount = async () => {
     const token = localStorage.getItem("accessToken");
     try {
@@ -282,7 +293,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
-  // 5. 조건부 렌더링
   if (loading && !user) return <div className="flex h-screen items-center justify-center">로딩중...</div>;
   
   if (error || !user) return (
@@ -304,7 +314,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
             onEdit={handlePetEdit} 
             onDelete={handlePetDelete} 
         />
-        {/* 수정 모달: selectedPet이 확실히 있을 때만 렌더링 */}
         {showPetEdit && (
             <PetEditDialog 
                 open={showPetEdit} 
@@ -345,11 +354,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
             <h2 className="flex items-center gap-2 mb-6 text-gray-700"><User className="w-5 h-5" /> 사용자 프로필</h2>
             <div className="flex flex-col items-center mb-6">
               <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4 overflow-hidden border-2 border-gray-100">
-                {user.profilePhoto ? (
-                    <img src={`${API_BASE_URL}${user.profilePhoto}`} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                    <span className="text-4xl text-gray-600">{profileInitial}</span>
-                )}
+                {/* [수정] 사진 표시 로직 제거, 항상 이니셜 표시 */}
+                <span className="text-4xl text-gray-600">{profileInitial}</span>
               </div>
               <h3 className="text-2xl text-gray-900 mb-1">{user.nickname}</h3>
               <p className="text-gray-600 mb-2">{user.email}</p>
@@ -371,14 +377,9 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
                     <div key={pet.id} className="border border-gray-200 rounded-xl p-4 relative cursor-pointer hover:border-yellow-300 transition-colors" onClick={() => handlePetClick(pet.id)}>
                     <div className="flex items-start justify-between mb-3">
                         <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
-                            {/* [수정] 펫 목록에 사진 표시 */}
-                            {pet.photo ? (
-                                <img src={pet.photo} alt={pet.name} className="w-full h-full object-cover" />
-                            ) : (
-                                <Dog className="w-6 h-6 text-gray-500" />
-                            )}
+                            {/* [수정] 사진 표시 로직 제거, 항상 강아지 아이콘 표시 */}
+                            <Dog className="w-6 h-6 text-gray-500" />
                         </div>
-                        {/* [수정] 카드 위 수정 버튼 클릭 시 이벤트 전파 방지 및 수정창 열기 */}
                         <button 
                             className="text-gray-400 hover:text-gray-600"
                             onClick={(e) => {
@@ -402,8 +403,32 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
-          <div className="flex items-center gap-3 mb-6"><Checkbox id="recent-reviews" /><label htmlFor="recent-reviews" className="text-gray-700 cursor-pointer">최근 작성한 리뷰</label></div>
-          <div className="space-y-4 text-center py-4 text-gray-500">작성된 리뷰가 없습니다.</div>
+          <div className="flex items-center gap-3 mb-6">
+            <MessageSquare className="w-5 h-5 text-gray-700" />
+            <h2 className="text-lg text-gray-700 font-medium">최근 작성한 리뷰</h2>
+          </div>
+          
+          {/* [확인] 리뷰 목록 표시 로직 */}
+          {reviews.length === 0 ? (
+            <div className="space-y-4 text-center py-4 text-gray-500">작성된 리뷰가 없습니다.</div>
+          ) : (
+            <div className="space-y-4">
+                {reviews.map((review) => (
+                    <div key={review.id} className="border border-gray-100 rounded-xl p-4 hover:border-gray-300 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-medium text-gray-900">{review.placeName}</h3>
+                            <span className="text-xs text-gray-500">{review.date}</span>
+                        </div>
+                        <div className="flex gap-1 mb-2">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} className={`w-3 h-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`} />
+                            ))}
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2">{review.content}</p>
+                    </div>
+                ))}
+            </div>
+          )}
         </div>
       </div>
 

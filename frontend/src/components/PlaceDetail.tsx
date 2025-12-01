@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import {
-  Star, MapPin, Clock, Share2, Heart, Users, Shield, PawPrint, X,
+  Star, MapPin, Clock, Share2, Heart, Users, Shield, PawPrint, X, User
 } from "lucide-react";
 import { ImageWithFallback } from "./ui/ImageWithFallback";
 import logoImage from "../assets/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
@@ -56,6 +56,7 @@ export function PlaceDetail({
   onBack,
 }: PlaceDetailProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(false);
   
   const [editingReview, setEditingReview] = useState<Review | null>(null);
@@ -66,9 +67,8 @@ export function PlaceDetail({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   const currentUserId = Number(localStorage.getItem("userId") || 0);
-  const galleryImages = [place.image, place.image, place.image]; // 실제로는 place.photos 사용 권장
+  const galleryImages = [place.image, place.image, place.image];
 
-  // 1. 리뷰 목록 불러오기
   const fetchReviews = useCallback(async () => {
     try {
         const res = await fetch(`${API_BASE_URL}/api/places/${place.id}/reviews`);
@@ -96,7 +96,6 @@ export function PlaceDetail({
     fetchReviews();
   }, [fetchReviews]);
 
-  // 2. 리뷰 작성 핸들러
   const handleWriteReview = () => {
     if (!isLoggedIn) {
       toast.error("로그인이 필요한 기능입니다.");
@@ -105,6 +104,7 @@ export function PlaceDetail({
     setShowWriteDialog(true);
   };
 
+  // [수정] 리뷰 등록 핸들러 (에러 메시지 처리 강화)
   const handleCreateReview = async (rating: number, content: string, photos: string[]) => {
     const token = localStorage.getItem("accessToken");
     try {
@@ -117,19 +117,21 @@ export function PlaceDetail({
             body: JSON.stringify({ rating, content, photos })
         });
         
-        if (res.ok) {
+        const result = await res.json(); // 응답 내용을 먼저 받습니다.
+
+        if (res.ok && result.success) {
             toast.success("리뷰가 등록되었습니다.");
             setShowWriteDialog(false);
-            fetchReviews(); // 목록 갱신
+            fetchReviews(); 
         } else {
-            toast.error("리뷰 등록에 실패했습니다.");
+            // 서버가 보낸 에러 메시지(예: "20자 이상 작성해주세요")를 띄웁니다.
+            toast.error(result.message || "리뷰 등록에 실패했습니다.");
         }
     } catch (e) {
         toast.error("오류가 발생했습니다.");
     }
   };
 
-  // 3. 리뷰 수정 핸들러
   const handleUpdateReview = async (rating: number, content: string, photos: string[]) => {
     if (!editingReview) return;
     const token = localStorage.getItem("accessToken");
@@ -144,20 +146,21 @@ export function PlaceDetail({
             body: JSON.stringify({ rating, content, photos })
         });
 
-        if (res.ok) {
+        const result = await res.json();
+
+        if (res.ok && result.success) {
             toast.success("리뷰가 수정되었습니다.");
             setEditingReview(null);
             setShowEditDialog(false);
             fetchReviews();
         } else {
-            toast.error("수정에 실패했습니다.");
+            toast.error(result.message || "수정에 실패했습니다.");
         }
     } catch (e) {
         toast.error("오류가 발생했습니다.");
     }
   };
 
-  // 4. 리뷰 삭제 핸들러
   const handleDeleteConfirm = async () => {
     if (!deleteReviewId) return;
     const token = localStorage.getItem("accessToken");
@@ -276,7 +279,6 @@ export function PlaceDetail({
                             <p className="text-xs text-gray-500">{review.date}</p>
                           </div>
                         </div>
-                        {/* 본인 리뷰일 때만 수정/삭제 버튼 표시 */}
                         {isLoggedIn && currentUserId === review.userId && (
                             <div className="flex gap-2 text-sm">
                                 <button className="text-gray-400 hover:text-gray-600" onClick={() => { setEditingReview(review); setShowEditDialog(true); }}>수정</button>
@@ -310,7 +312,6 @@ export function PlaceDetail({
         </div>
       </div>
 
-      {/* 리뷰 작성 다이얼로그 */}
       <ReviewEditDialog 
         open={showWriteDialog} 
         onClose={() => setShowWriteDialog(false)} 
@@ -320,7 +321,6 @@ export function PlaceDetail({
         mode="write" 
       />
       
-      {/* 리뷰 수정 다이얼로그 */}
       {editingReview && (
         <ReviewEditDialog 
             open={showEditDialog} 
@@ -332,7 +332,6 @@ export function PlaceDetail({
         />
       )}
       
-      {/* 삭제 확인 알림 */}
       <AlertDialog open={deleteReviewId !== null} onOpenChange={() => setDeleteReviewId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>리뷰 삭제</AlertDialogTitle><AlertDialogDescription>정말로 삭제하시겠습니까?</AlertDialogDescription></AlertDialogHeader>
@@ -340,7 +339,6 @@ export function PlaceDetail({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 이미지 확대 보기 */}
       <Dialog open={selectedImageIndex !== null} onOpenChange={() => setSelectedImageIndex(null)}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-none">
           <Button variant="ghost" size="icon" className="absolute top-4 right-4 z-50 text-white hover:bg-white/20" onClick={() => setSelectedImageIndex(null)}><X className="w-6 h-6" /></Button>
