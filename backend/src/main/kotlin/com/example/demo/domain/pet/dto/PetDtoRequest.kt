@@ -11,7 +11,8 @@ data class PetDtoCreateRequest(
     val birthDate: LocalDate? = null,
     val age: Int = 0, // [추가]
     val weight: Double? = null,
-    val specialNotes: String? = null
+    val specialNotes: String? = null,
+    val photo: String? = null // [추가]
 )
 
 data class PetDtoUpdateRequest(
@@ -21,5 +22,6 @@ data class PetDtoUpdateRequest(
     val birthDate: LocalDate? = null,
     val age: Int = 0, // [추가]
     val weight: Double? = null,
-    val specialNotes: String? = null
+    val specialNotes: String? = null,
+    val photo: String? = null // [추가]
 )

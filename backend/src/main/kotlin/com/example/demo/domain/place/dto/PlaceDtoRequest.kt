@@ -12,10 +12,11 @@ data class PlaceCreateRequest(
     val petPolicy: String,
 
     val category: PlaceCategory,
-    val locationType: LocationType,     // 예: "INDOOR", "OUTDOOR"
-    val allowedSizes: Set<DogSize>,     // 예: ["SMALL", "MEDIUM"]
+    val locationType: LocationType,
+    val allowedSizes: Set<DogSize>,
     val hasParking: Boolean = false,
     val isOffLeash: Boolean = false,
+    val hasWifi: Boolean = false, // [추가]
 
     val latitude: Double? = null,
     val longitude: Double? = null,
@@ -34,6 +35,7 @@ data class PlaceUpdateRequest(
     val allowedSizes: Set<DogSize>,
     val hasParking: Boolean,
     val isOffLeash: Boolean,
+    val hasWifi: Boolean, // [추가]
 
     val latitude: Double? = null,
     val longitude: Double? = null,

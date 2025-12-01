@@ -133,6 +133,7 @@ export default function App() {
   };
 
   const handleSearchClick = () => {
+    // 검색어 유지
     setCurrentPage("search");
   };
 
@@ -142,20 +143,26 @@ export default function App() {
     setLoading(true);
 
     try {
-        // 프론트엔드 필터 데이터를 백엔드 DTO 형식으로 변환
+        // 1. 카테고리 매핑 (프론트 'cafe' -> 백엔드 'CAFE')
+        const categories = [];
+        if (newFilters.amenities.includes("cafe")) categories.push("CAFE");
+        if (newFilters.amenities.includes("restaurant")) categories.push("RESTAURANT");
+        if (newFilters.amenities.includes("exercise")) categories.push("PLAYGROUND"); // 운동 -> 운동장
+        if (newFilters.amenities.includes("water")) categories.push("SWIMMING");     // 물놀이 -> 수영장
+        if (newFilters.amenities.includes("grooming")) categories.push("BEAUTY");    // 미용 -> BEAUTY
+
+        // 2. 백엔드 요청 데이터 구성
         const requestBody = {
-            // 편의시설 중 'parking'이 있으면 true
+            // 편의시설 필터
             hasParking: newFilters.amenities.includes("parking") ? true : null,
-            // 편의시설 중 'outdoor'가 있으면 true
+            hasWifi: newFilters.amenities.includes("wifi") ? true : null,
             isOutdoor: newFilters.amenities.includes("outdoor") ? true : null,
             
-            // 견종 크기: 배열 그대로 전송 (SMALL, MEDIUM, LARGE)
+            // 견종 크기 필터
             dogSizes: newFilters.petSizes.length > 0 ? newFilters.petSizes : null,
             
-            // 장소 유형: 백엔드 Enum(대문자)에 맞춰 변환 (cafe -> CAFE)
-            categories: newFilters.placeTypes.length > 0 
-                ? newFilters.placeTypes.map(t => t.toUpperCase()) 
-                : null
+            // 장소 유형(카테고리) 필터
+            categories: categories.length > 0 ? categories : null
         };
 
         const response = await fetch(`${API_BASE_URL}/api/places/filter`, {
@@ -166,11 +173,11 @@ export default function App() {
 
         const result = await response.json();
         if (result.success) {
-            // 필터링된 데이터로 교체
+            // 필터링된 데이터로 목록 교체
             setPlaces(mapPlaceData(result.data));
             toast.success(`총 ${result.data.length}개의 장소를 찾았습니다.`);
             
-            // 결과 화면으로 이동 (선택사항)
+            // 결과 화면으로 이동
             setCurrentPage("search");
         } else {
             toast.error("검색 결과를 가져오지 못했습니다.");

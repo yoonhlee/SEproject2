@@ -18,6 +18,7 @@ data class PlaceDtoResponse(
     val allowedSizes: Set<DogSize>,
     val hasParking: Boolean,
     val isOffLeash: Boolean,
+    val hasWifi: Boolean, // [추가]
 
     val avgRating: Double,
     val reviewCount: Int,
@@ -35,12 +36,12 @@ data class PlaceDtoResponse(
                 operationHours = place.operationHours,
                 petPolicy = place.petPolicy,
 
-                // 매핑
                 category = place.category,
                 locationType = place.locationType,
                 allowedSizes = place.allowedSizes,
                 hasParking = place.hasParking,
                 isOffLeash = place.isOffLeash,
+                hasWifi = place.hasWifi, // [추가]
 
                 avgRating = place.avgRating,
                 reviewCount = place.reviewCount,

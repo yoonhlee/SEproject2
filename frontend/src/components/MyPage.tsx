@@ -25,6 +25,7 @@ interface Pet {
   birthday?: string;
   weight?: number;
   personality?: string;
+  photo?: string; // [추가] 사진 URL
 }
 
 interface Review {
@@ -42,7 +43,6 @@ interface MyPageProps {
 }
 
 export function MyPage({ onBack, onLogout }: MyPageProps) {
-  // 1. 상태 선언 (State)
   const [user, setUser] = useState<any>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]); 
@@ -55,11 +55,10 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   const [showPetEdit, setShowPetEdit] = useState(false);
   const [showAddPet, setShowAddPet] = useState(false);
 
-  // 2. 변수 정의 (Computed Variables) - [중요] 위치가 여기여야 에러가 안 납니다!
-  // selectedPetId가 있을 때 pets 배열에서 해당 펫을 찾습니다.
+  // 2. 변수 정의 (선택된 펫)
   const selectedPet = selectedPetId ? pets.find((p) => p.id === selectedPetId) : null;
 
-  // 3. 데이터 불러오기 함수
+  // 3. 데이터 불러오기
   const fetchMyData = useCallback(async () => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
@@ -72,6 +71,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     try {
       setLoading(true);
       
+      // 1. 사용자 정보 조회
       const userRes = await fetch(`${API_BASE_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -94,6 +94,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
           throw new Error(userData.message);
       }
 
+      // 2. 반려동물 목록 조회
       const petRes = await fetch(`${API_BASE_URL}/api/users/${userId}/pets`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -104,12 +105,13 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
               id: p.petId,
               name: p.name,
               breed: "품종 정보 없음", 
-              age: p.age,
+              age: p.age, // [수정] DB의 age 값 사용
               size: p.size,
               gender: p.gender,
               birthday: p.birthDate ? p.birthDate.replace(/-/g, "") : "", 
               weight: p.weight,
-              personality: p.specialNotes
+              personality: p.specialNotes,
+              photo: p.photo // [추가] DB의 photo 값 사용
           }));
           setPets(mappedPets);
       }
@@ -127,6 +129,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   }, [fetchMyData]);
 
   // 4. 핸들러 함수들
+  
+  // 프로필 수정 (닉네임 등)
   const handleProfileUpdate = async (newNickname: string) => {
     const token = localStorage.getItem("accessToken");
     if (!token) return;
@@ -165,6 +169,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
   const handlePetClick = (petId: number) => { setSelectedPetId(petId); };
   const handlePetEdit = () => { setShowPetEdit(true); };
   
+  // 펫 삭제
   const handlePetDelete = async () => { 
     if (!selectedPetId) return;
     if (!window.confirm("정말로 삭제하시겠습니까?")) return;
@@ -195,6 +200,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
   };
 
+  // 펫 추가 (Create)
   const handleAddPetSubmit = async (petData: any) => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
@@ -204,9 +210,10 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         gender: petData.gender,
         size: petData.size,
         birthDate: formatBirthDate(petData.birthday),
-        age: petData.age, 
+        age: petData.age, // [추가] 나이 전송
         weight: Number(petData.weight) || null,
-        specialNotes: petData.personality 
+        specialNotes: petData.personality,
+        photo: petData.photo // [추가] 사진 URL 전송
     };
 
     try {
@@ -225,6 +232,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
+  // 펫 수정 (Update)
   const handleUpdatePetSubmit = async (petData: any) => {
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
@@ -235,9 +243,10 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         gender: petData.gender,
         size: petData.size,
         birthDate: formatBirthDate(petData.birthday),
-        age: petData.age,
+        age: petData.age, // [추가] 나이 전송
         weight: Number(petData.weight) || null,
-        specialNotes: petData.personality
+        specialNotes: petData.personality,
+        photo: petData.photo // [추가] 사진 URL 전송
     };
 
     try {
@@ -256,6 +265,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
+  // 계정 탈퇴
   const handleDeleteAccount = async () => {
     const token = localStorage.getItem("accessToken");
     try {
@@ -272,7 +282,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
     } catch (e) { alert("오류가 발생했습니다."); }
   };
 
-  // 5. 조건부 렌더링 (Return)
+  // 5. 조건부 렌더링
   if (loading && !user) return <div className="flex h-screen items-center justify-center">로딩중...</div>;
   
   if (error || !user) return (
@@ -334,7 +344,13 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
           <div className="bg-white rounded-2xl border border-gray-200 p-8">
             <h2 className="flex items-center gap-2 mb-6 text-gray-700"><User className="w-5 h-5" /> 사용자 프로필</h2>
             <div className="flex flex-col items-center mb-6">
-              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4"><span className="text-4xl text-gray-600">{profileInitial}</span></div>
+              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4 overflow-hidden border-2 border-gray-100">
+                {user.profilePhoto ? (
+                    <img src={`${API_BASE_URL}${user.profilePhoto}`} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    <span className="text-4xl text-gray-600">{profileInitial}</span>
+                )}
+              </div>
               <h3 className="text-2xl text-gray-900 mb-1">{user.nickname}</h3>
               <p className="text-gray-600 mb-2">{user.email}</p>
               <p className="text-yellow-600 mb-4">반려동물 {pets.length}마리</p>
@@ -354,14 +370,21 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
                 {pets.map((pet) => (
                     <div key={pet.id} className="border border-gray-200 rounded-xl p-4 relative cursor-pointer hover:border-yellow-300 transition-colors" onClick={() => handlePetClick(pet.id)}>
                     <div className="flex items-start justify-between mb-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center"><Dog className="w-6 h-6 text-gray-500" /></div>
-                        {/* [수정] 카드 위 수정 버튼을 누르면 이벤트 전파를 막고 바로 수정창을 띄움 */}
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
+                            {/* [수정] 펫 목록에 사진 표시 */}
+                            {pet.photo ? (
+                                <img src={pet.photo} alt={pet.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <Dog className="w-6 h-6 text-gray-500" />
+                            )}
+                        </div>
+                        {/* [수정] 카드 위 수정 버튼 클릭 시 이벤트 전파 방지 및 수정창 열기 */}
                         <button 
                             className="text-gray-400 hover:text-gray-600"
                             onClick={(e) => {
-                                e.stopPropagation(); // 카드 클릭(상세페이지 이동) 방지
-                                handlePetClick(pet.id); // 선택된 펫 설정
-                                setShowPetEdit(true);   // 수정창 열기
+                                e.stopPropagation(); 
+                                handlePetClick(pet.id); 
+                                setShowPetEdit(true);   
                             }}
                         >
                             <Edit2 className="w-4 h-4" />

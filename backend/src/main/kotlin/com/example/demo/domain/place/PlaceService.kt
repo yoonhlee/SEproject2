@@ -3,7 +3,6 @@ package com.example.demo.domain.place
 import com.example.demo.domain.place.dto.PlaceCreateRequest
 import com.example.demo.domain.place.dto.PlaceDtoResponse
 import com.example.demo.domain.place.dto.PlaceUpdateRequest
-// [중요] 아래 import들이 꼭 있어야 합니다!
 import com.example.demo.domain.place.dto.PlaceFilterRequest 
 import com.example.demo.domain.place.model.LocationType
 import org.springframework.data.repository.findByIdOrNull
@@ -29,6 +28,7 @@ class PlaceService(
             locationType = request.locationType,
             hasParking = request.hasParking,
             isOffLeash = request.isOffLeash,
+            hasWifi = request.hasWifi, // [추가]
 
             latitude = request.latitude,
             longitude = request.longitude
@@ -58,6 +58,7 @@ class PlaceService(
             locationType = request.locationType,
             hasParking = request.hasParking,
             isOffLeash = request.isOffLeash,
+            hasWifi = request.hasWifi, // [추가]
             allowedSizes = request.allowedSizes,
 
             latitude = request.latitude,
@@ -91,7 +92,7 @@ class PlaceService(
         return PlaceDtoResponse.from(place)
     }
 
-    // 장소 검색 (이름 또는 주소)
+    // 장소 검색
     @Transactional(readOnly = true)
     fun searchPlaces(keyword: String): List<PlaceDtoResponse> {
         val places = placeRepository.findByNameContainingIgnoreCase(keyword)
@@ -100,29 +101,28 @@ class PlaceService(
         return places.map { PlaceDtoResponse.from(it) }
     }
 
-    // [추가] 필터 검색 기능
+    // [수정] 필터 검색 기능 (Wifi 필터 추가)
     @Transactional(readOnly = true)
     fun searchByFilter(request: PlaceFilterRequest): List<PlaceDtoResponse> {
         val allPlaces = placeRepository.findAll()
 
         val filtered = allPlaces.filter { place ->
-            // 1. 카테고리 필터
             val matchCategory = if (request.categories.isNullOrEmpty()) true
             else request.categories.contains(place.category)
 
-            // 2. 견종 크기 필터
             val matchSize = if (request.dogSizes.isNullOrEmpty()) true
             else place.allowedSizes.any { it in request.dogSizes }
 
-            // 3. 주차 여부
             val matchParking = if (request.hasParking == true) place.hasParking else true
+            
+            // [추가] 와이파이 필터
+            val matchWifi = if (request.hasWifi == true) place.hasWifi else true
 
-            // 4. 야외 여부 (OUTDOOR 또는 BOTH)
             val matchOutdoor = if (request.isOutdoor == true) {
                 place.locationType == LocationType.OUTDOOR || place.locationType == LocationType.BOTH
             } else true
 
-            matchCategory && matchSize && matchParking && matchOutdoor
+            matchCategory && matchSize && matchParking && matchOutdoor && matchWifi
         }
 
         return filtered.map { PlaceDtoResponse.from(it) }

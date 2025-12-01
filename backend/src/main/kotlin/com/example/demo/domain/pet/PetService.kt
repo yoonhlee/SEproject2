@@ -15,20 +15,25 @@ class PetService(
 ) {
     @Transactional
     fun createPet(userId: Long, request: PetDtoCreateRequest): PetDtoResponse {
+        // 주인을 찾는다
         val owner = userRepository.findByIdOrNull(userId)
             ?: throw IllegalArgumentException("존재하지 않는 사용자입니다.")
 
+        // 펫 엔티티 생성
         val pet = Pet(
             name = request.name,
             gender = request.gender,
             size = request.size,
             birthDate = request.birthDate,
-            age = request.age, // [추가]
+            age = request.age, // [추가] 나이
             weight = request.weight,
             specialNotes = request.specialNotes,
-            owner = owner
+            photo = request.photo, // [추가] 사진 URL
+            owner = owner // 펫의 주인으로 방금 찾은 user를 지정
         )
+
         val savedPet = petRepository.save(pet)
+
         return PetDtoResponse.from(savedPet)
     }
 
@@ -40,20 +45,23 @@ class PetService(
         return pets.map { pet -> PetDtoResponse.from(pet) }
     }
 
-   @Transactional
+    @Transactional
     fun updatePet(userId: Long, petId: Long, request: PetDtoUpdateRequest): PetDtoResponse {
         val pet = petRepository.findByPetIdAndOwnerUserId(petId, userId)
             ?: throw IllegalArgumentException("펫이 존재하지 않거나 수정 권한이 없습니다.")
 
+        // 펫 정보 수정 (Pet 엔티티의 헬퍼 메서드 사용)
         pet.updateInfo(
             name = request.name,
             gender = request.gender,
             size = request.size,
             birthDate = request.birthDate,
-            age = request.age, // [추가]
+            age = request.age, // [추가] 나이
             weight = request.weight,
-            specialNotes = request.specialNotes
+            specialNotes = request.specialNotes,
+            photo = request.photo // [추가] 사진 URL
         )
+
         return PetDtoResponse.from(pet)
     }
 

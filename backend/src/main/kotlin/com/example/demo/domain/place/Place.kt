@@ -18,26 +18,27 @@ class Place(
     var phone: String? = null,
     var operationHours: String? = null,
 
-    // [필터용 필드들]
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var category: PlaceCategory,
 
     var hasParking: Boolean = false,
     var isOffLeash: Boolean = false,
+    
+    // [추가] 와이파이 여부
+    var hasWifi: Boolean = false,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var locationType: LocationType,
 
-    // "소형견, 대형견" 다 되는 곳이 있으므로 Set으로 관리
     @ElementCollection(targetClass = DogSize::class)
     @CollectionTable(name = "place_allowed_sizes", joinColumns = [JoinColumn(name = "place_id")])
     @Enumerated(EnumType.STRING)
     var allowedSizes: MutableSet<DogSize> = mutableSetOf(),
 
     @Column(nullable = false)
-    var petPolicy: String, // 텍스트형 상세 정책 (예: "입질있는 강아지 불가")
+    var petPolicy: String,
 
     var latitude: Double? = null,
     var longitude: Double? = null
@@ -57,11 +58,12 @@ class Place(
     @Column(name = "photo_url")
     var photos: MutableList<String> = mutableListOf()
 
-    // 정보 수정 편의 메서드
+    // [수정] 정보 수정 메서드에 hasWifi 추가
     fun updateInfo(
         name: String, address: String, phone: String?, operationHours: String?,
         petPolicy: String, category: PlaceCategory, locationType: LocationType,
-        hasParking: Boolean, isOffLeash: Boolean, allowedSizes: Set<DogSize>,
+        hasParking: Boolean, isOffLeash: Boolean, hasWifi: Boolean, // [추가]
+        allowedSizes: Set<DogSize>,
         latitude: Double?, longitude: Double?, newPhotos: List<String>
     ) {
         this.name = name
@@ -73,6 +75,7 @@ class Place(
         this.locationType = locationType
         this.hasParking = hasParking
         this.isOffLeash = isOffLeash
+        this.hasWifi = hasWifi // [추가]
         this.allowedSizes.clear()
         this.allowedSizes.addAll(allowedSizes)
         this.latitude = latitude
@@ -81,7 +84,6 @@ class Place(
         this.photos.addAll(newPhotos)
     }
 
-    // 평점/리뷰수 갱신
     fun updateRatingInfo(newRating: Double, newReviewCount: Int) {
         this.avgRating = newRating
         this.reviewCount = newReviewCount
