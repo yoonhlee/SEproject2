@@ -31,10 +31,10 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [places, setPlaces] = useState<any[]>([]); 
-  const [reviews, setReviews] = useState<any[]>([]); 
+  // [수정] reviews 상태 삭제 (PlaceDetail에서 직접 관리함)
   const [loading, setLoading] = useState(true);
 
-  // 장소 데이터 매핑 헬퍼 함수
+  // 장소 데이터 매핑 헬퍼
   const mapPlaceData = (data: any[]) => {
     return data.map((p: any) => ({
       id: p.placeId,
@@ -85,29 +85,9 @@ export default function App() {
     fetchPlaces();
   }, []);
 
-  const handlePlaceClick = async (placeId: number) => {
+  const handlePlaceClick = (placeId: number) => {
     setSelectedPlaceId(placeId);
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/places/${placeId}/reviews`);
-        const data = await res.json();
-        if (data.success) {
-            const mappedReviews = data.data.map((r: any) => ({
-                id: r.reviewId,
-                placeId: r.placeId,
-                userId: r.userId,
-                userName: r.userNickname,
-                userPhoto: "",
-                rating: r.rating,
-                content: r.content,
-                photos: r.photos,
-                date: new Date(r.createdAt).toLocaleDateString()
-            }));
-            setReviews(mappedReviews);
-        }
-    } catch (e) {
-        console.error("리뷰 로딩 실패", e);
-        setReviews([]);
-    }
+    // [수정] 리뷰 로딩 로직 삭제 (PlaceDetail 컴포넌트 내부에서 처리)
     setCurrentPage("placeDetail");
   };
 
@@ -133,36 +113,19 @@ export default function App() {
   };
 
   const handleSearchClick = () => {
-    // 검색어 유지
     setCurrentPage("search");
   };
 
-  // [수정] 필터 적용 핸들러 (백엔드 연동)
   const handleFilterApply = async (newFilters: FilterState) => {
     setFilters(newFilters);
     setLoading(true);
 
     try {
-        // 1. 카테고리 매핑 (프론트 'cafe' -> 백엔드 'CAFE')
-        const categories = [];
-        if (newFilters.amenities.includes("cafe")) categories.push("CAFE");
-        if (newFilters.amenities.includes("restaurant")) categories.push("RESTAURANT");
-        if (newFilters.amenities.includes("exercise")) categories.push("PLAYGROUND"); // 운동 -> 운동장
-        if (newFilters.amenities.includes("water")) categories.push("SWIMMING");     // 물놀이 -> 수영장
-        if (newFilters.amenities.includes("grooming")) categories.push("BEAUTY");    // 미용 -> BEAUTY
-
-        // 2. 백엔드 요청 데이터 구성
         const requestBody = {
-            // 편의시설 필터
             hasParking: newFilters.amenities.includes("parking") ? true : null,
-            hasWifi: newFilters.amenities.includes("wifi") ? true : null,
             isOutdoor: newFilters.amenities.includes("outdoor") ? true : null,
-            
-            // 견종 크기 필터
             dogSizes: newFilters.petSizes.length > 0 ? newFilters.petSizes : null,
-            
-            // 장소 유형(카테고리) 필터
-            categories: categories.length > 0 ? categories : null
+            categories: newFilters.placeTypes.length > 0 ? newFilters.placeTypes.map(t => t.toUpperCase()) : null
         };
 
         const response = await fetch(`${API_BASE_URL}/api/places/filter`, {
@@ -173,17 +136,13 @@ export default function App() {
 
         const result = await response.json();
         if (result.success) {
-            // 필터링된 데이터로 목록 교체
             setPlaces(mapPlaceData(result.data));
             toast.success(`총 ${result.data.length}개의 장소를 찾았습니다.`);
-            
-            // 결과 화면으로 이동
             setCurrentPage("search");
         } else {
             toast.error("검색 결과를 가져오지 못했습니다.");
         }
     } catch (error) {
-        console.error(error);
         toast.error("서버 연결 실패");
     } finally {
         setLoading(false);
@@ -207,14 +166,11 @@ export default function App() {
       case "placeDetail":
         if (!selectedPlace) return <div className="p-8 text-center">장소 정보를 찾을 수 없습니다.</div>;
         return (
+            // [수정] PlaceDetail에 필요한 props만 전달 (불필요한 reviews, 핸들러 제거)
             <PlaceDetail 
                 place={selectedPlace} 
-                reviews={reviews} 
                 isLoggedIn={isLoggedIn} 
                 onBack={() => setCurrentPage("main")} 
-                onAddReview={() => { alert("리뷰 작성 기능 준비중"); }}
-                onEditReview={() => {}}
-                onDeleteReview={() => {}}
             />
         );
       case "search":
