@@ -70,8 +70,12 @@ class UserService(
 
     @Transactional(readOnly = true)
     fun findLoginId(request: FindIdRequest): String {
-        val user = userRepository.findByEmail(request.email!!)
-            ?: throw IllegalArgumentException("해당 이메일로 가입된 계정이 없습니다.")
+        // [수정] 이름, 생년월일, 이메일 모두 일치하는지 확인
+        val user = userRepository.findByNameAndBirthdateAndEmail(
+            request.name!!, 
+            request.birthdate!!, 
+            request.email!!
+        ) ?: throw IllegalArgumentException("입력하신 정보와 일치하는 계정이 없습니다.")
 
         return user.loginId
     }

@@ -16,15 +16,15 @@ import { API_BASE_URL } from "../lib/constants";
 interface FindAccountProps {
   type: "id" | "password";
   onBack: () => void;
+  onHome: () => void;
 }
 
-export function FindAccount({ type, onBack }: FindAccountProps) {
+export function FindAccount({ type, onBack, onHome }: FindAccountProps) {
   const [formData, setFormData] = useState({
     name: "",
     birthdate: "",
     email: "",
     username: "",
-    // phone은 백엔드 로직상(이메일 인증) 사용하지 않으므로 email 재사용
   });
   const [error, setError] = useState("");
   const [showResult, setShowResult] = useState(false);
@@ -35,17 +35,20 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
 
     try {
       if (type === "id") {
-        // [아이디 찾기]
-        // 백엔드는 이메일로 아이디를 찾습니다. (이름, 생년월일은 입력은 받되 API엔 이메일만 전송)
-        if (!formData.email) {
-          setError("이메일을 입력해주세요.");
+        // [수정] 아이디 찾기: 이름, 생년월일, 이메일 모두 필수
+        if (!formData.name || !formData.birthdate || !formData.email) {
+          setError("이름, 생년월일, 이메일을 모두 입력해주세요.");
           return;
         }
 
         const response = await fetch(`${API_BASE_URL}/api/users/find-id`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: formData.email }),
+          body: JSON.stringify({ 
+            name: formData.name,
+            birthdate: formData.birthdate,
+            email: formData.email 
+          }),
         });
 
         const data = await response.json();
@@ -59,7 +62,6 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
 
       } else {
         // [비밀번호 찾기]
-        // 백엔드는 아이디 + 이메일로 사용자를 확인하고 임시 비밀번호를 줍니다.
         if (!formData.username || !formData.email) {
           setError("아이디와 이메일을 모두 입력해주세요.");
           return;
@@ -95,15 +97,15 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <button onClick={onBack} className="hover:opacity-70 transition-opacity">
+            <button onClick={onHome} className="hover:opacity-70 transition-opacity">
               <img src={logoImage} alt="어디가개" className="h-24 mb-4" />
             </button>
             <h1 className="text-3xl mb-2">
               {type === "id" ? "아이디 찾기" : "비밀번호 찾기"}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-center">
               {type === "id"
-                ? "가입 시 등록한 이메일을 입력해주세요"
+                ? "가입 시 등록한 이름, 생년월일, 이메일을 입력해주세요"
                 : "아이디와 이메일을 입력해주세요"}
             </p>
           </div>
@@ -119,9 +121,8 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
           <div className="space-y-4 mb-6">
             {type === "id" ? (
               <>
-                {/* 이름, 생년월일은 구색 맞추기용 (실제 찾기는 이메일로) */}
                 <div>
-                  <Label htmlFor="name">이름</Label>
+                  <Label htmlFor="name">이름 *</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -134,7 +135,7 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="birthdate">생년월일</Label>
+                  <Label htmlFor="birthdate">생년월일 *</Label>
                   <Input
                     id="birthdate"
                     value={formData.birthdate}
@@ -144,7 +145,7 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
                         birthdate: e.target.value.replace(/\D/g, ""),
                       })
                     }
-                    placeholder="YYYYMMDD"
+                    placeholder="YYYYMMDD (예: 19900101)"
                     maxLength={8}
                     className="mt-1"
                   />
@@ -159,7 +160,7 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    placeholder="가입 시 등록한 이메일"
+                    placeholder="example@email.com"
                     className="mt-1"
                   />
                 </div>
@@ -180,7 +181,6 @@ export function FindAccount({ type, onBack }: FindAccountProps) {
                   />
                 </div>
 
-                {/* [수정] 휴대전화 -> 이메일로 변경 (백엔드 로직 일치화) */}
                 <div>
                   <Label htmlFor="email">이메일 *</Label>
                   <Input

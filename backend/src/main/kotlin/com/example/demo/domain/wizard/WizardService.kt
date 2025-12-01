@@ -42,57 +42,59 @@ class WizardService(
         }
     }
 
-    // [수정] 태그 기반 추천 알고리즘
     @Transactional(readOnly = true)
     fun getRecommendations(
         request: WizardRecommendRequest,
         sort: String = "distance"
     ): List<PlaceDtoResponse> {
 
-        // 1. 사용자 선택 태그 (Enum Set으로 변환)
+        // 1. 사용자가 선택한 태그 모음
         val selectedTags = request.tags.toSet()
 
-        // 2. 전체 장소 조회 (데이터가 많아지면 QueryDSL 등으로 최적화 필요)
+        // 2. 전체 장소 조회
         val allPlaces = placeRepository.findAll()
 
-        // 3. 거리 계산 및 필터링
+        // 3. 필터링 (교집합 찾기)
         val filteredPlaces = allPlaces.map { place ->
+            // 거리 계산 (위치 정보가 있을 때만)
             val dist = if (request.userLatitude != null && request.userLongitude != null) {
                 DistanceCalculator.calculate(
                     request.userLatitude, request.userLongitude,
                     place.latitude ?: 0.0, place.longitude ?: 0.0
                 )
             } else {
-                Double.MAX_VALUE 
+                0.0 // 위치 정보 없으면 거리 0 취급
             }
             Pair(place, dist)
         }.filter { (place, _) ->
-            // [핵심] 교집합 매칭 검사
+            // [핵심] 매칭 로직 호출
             isPlaceMatchedWithTags(place, selectedTags)
         }
 
-        // 4. 정렬
+        // 4. 정렬 (기본: 거리순, 옵션: 평점순/리뷰순)
         val sortedList = when (sort) {
             "rating" -> filteredPlaces.sortedByDescending { it.first.avgRating }
             "popular" -> filteredPlaces.sortedByDescending { it.first.reviewCount }
-            else -> filteredPlaces.sortedBy { it.second } // 거리순
+            else -> filteredPlaces.sortedBy { it.second } // 거리순 (가까운 순)
         }
 
-        // 5. 상위 3개 반환
+        // 5. 상위 3개 추천
         return sortedList.take(3).map { (place, _) ->
             PlaceDtoResponse.from(place)
         }
     }
 
-    // [수정] 매칭 로직 상세 구현 (Q1, Q2, Q3 반영)
+    /**
+     * 장소가 사용자의 선택 태그와 맞는지 검사하는 함수 (교집합 로직)
+     */
     private fun isPlaceMatchedWithTags(place: Place, tags: Set<WizardTag>): Boolean {
 
-        // Q1. 댕댕이 크기 (필수 조건: 해당 크기를 허용하는지)
+        // Q1. 크기 매칭 (필수: 장소가 해당 크기를 허용해야 함)
         if (tags.contains(WizardTag.SMALL) && !place.allowedSizes.contains(DogSize.SMALL)) return false
         if (tags.contains(WizardTag.MEDIUM) && !place.allowedSizes.contains(DogSize.MEDIUM)) return false
         if (tags.contains(WizardTag.LARGE) && !place.allowedSizes.contains(DogSize.LARGE)) return false
 
-        // Q2. 컨디션 (활발 vs 조용)
+        // Q2. 컨디션 매칭 (활동량)
         if (tags.contains(WizardTag.ENERGY_HIGH)) {
             // 활발함 -> 야외, 운동장, 공원, 물놀이 등
             val isHighEnergy = place.locationType == LocationType.OUTDOOR || 
@@ -111,7 +113,7 @@ class WizardService(
             if (!isLowEnergy) return false
         }
 
-        // Q3. 장소 선호 (자연 vs 도시 vs 프라이빗)
+        // Q3. 장소 취향 매칭
         if (tags.contains(WizardTag.TYPE_NATURE)) {
             // 자연친화적 -> 야외, 공원, 물놀이
             val isNature = place.locationType == LocationType.OUTDOOR || 
@@ -128,12 +130,11 @@ class WizardService(
             if (!isCity) return false
         }
         if (tags.contains(WizardTag.TYPE_PRIVATE)) {
-            // 프라이빗 -> 숙소 또는 오프리쉬 가능한 곳(가정)
-            // (로직을 더 엄격하게 하려면 ACCOMMODATION만 허용할 수도 있음)
+            // 프라이빗 -> 숙소 (또는 나중에 Private룸 속성이 생기면 추가)
             val isPrivate = place.category == PlaceCategory.ACCOMMODATION
             if (!isPrivate) return false
         }
 
-        return true
+        return true // 모든 조건을 통과하면 true
     }
 }

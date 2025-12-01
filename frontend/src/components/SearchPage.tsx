@@ -33,6 +33,7 @@ interface SearchPageProps {
   onSignupClick: () => void;
   onLogoutClick: () => void;
   onMyPageClick: () => void;
+  onHome: () => void; // [추가]
 }
 
 export function SearchPage({
@@ -47,28 +48,21 @@ export function SearchPage({
   onSignupClick,
   onLogoutClick,
   onMyPageClick,
+  onHome, // [추가]
 }: SearchPageProps) {
   const [inputQuery, setInputQuery] = useState(initialQuery);
-  const [appliedQuery, setAppliedQuery] = useState(initialQuery);
-  const [highlightedPlaceId, setHighlightedPlaceId] = useState<number | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeFilters, setActiveFilters] = useState<FilterState>({ amenities: [], petSizes: [], placeTypes: [] });
+  const [showFilters, setShowFilters] = useState(false);
+  const [highlightedPlaceId, setHighlightedPlaceId] = useState<number | null>(null);
+
+  const filteredPlaces = places.filter((place) => {
+    const matchesQuery = place.name.includes(inputQuery) || place.description.includes(inputQuery);
+    return matchesQuery;
+  });
 
   const handleSearch = () => {
-    setAppliedQuery(inputQuery);
+    // 검색 로직
   };
-
-  // 실제 검색 로직은 백엔드 API로 하는 것이 좋지만, UI 유지를 위해 클라이언트 필터링 유지
-  let filteredPlaces = places;
-  if (appliedQuery) {
-    filteredPlaces = filteredPlaces.filter(
-      (place) =>
-        place.name.includes(appliedQuery) ||
-        (place.description && place.description.includes(appliedQuery)) ||
-        place.category.includes(appliedQuery)
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -78,7 +72,7 @@ export function SearchPage({
         onSignupClick={onSignupClick}
         onLogoutClick={onLogoutClick}
         onMyPageClick={onMyPageClick}
-        onLogoClick={onBack}
+        onLogoClick={onHome} // [수정] onBack 대신 onHome 연결
         onSearchClick={() => {}}
         onWizardClick={onWizardClick}
         onFilterClick={() => setShowFilters(true)}
@@ -109,7 +103,11 @@ export function SearchPage({
           </div>
           <div className="hidden lg:block lg:col-span-1">
             <div className="sticky top-24">
-              <MapView places={filteredPlaces} highlightedPlaceId={highlightedPlaceId} onPlaceClick={onPlaceClick} />
+              <MapView
+                places={filteredPlaces}
+                highlightedPlaceId={highlightedPlaceId}
+                onPlaceClick={onPlaceClick}
+              />
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { PetForm } from "./PetForm";
 
-export function PetEditDialog({ open, onClose, pet, onSave }: any) {
+export function PetEditDialog({ open, onClose, pet, onSave, onHome }: any) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl p-0 border-none bg-transparent shadow-none">
@@ -13,7 +13,7 @@ export function PetEditDialog({ open, onClose, pet, onSave }: any) {
         </DialogHeader>
         
         <div className="bg-white rounded-2xl overflow-hidden">
-            <PetForm pet={pet} onSubmit={onSave} onBack={onClose} />
+            <PetForm pet={pet} onSubmit={onSave} onBack={onClose} onHome={onHome} />
         </div>
       </DialogContent>
     </Dialog>

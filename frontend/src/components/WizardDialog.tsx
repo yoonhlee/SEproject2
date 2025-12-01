@@ -9,7 +9,7 @@ import { toast } from "sonner";
 interface WizardDialogProps {
   open: boolean;
   onClose: () => void;
-  places: any[]; // 메인에서 넘겨받은 전체 데이터는 사용하지 않고, 추천 API 결과를 씁니다.
+  places: any[];
   onPlaceClick: (placeId: number) => void;
 }
 
@@ -17,11 +17,9 @@ export function WizardDialog({ open, onClose, onPlaceClick }: WizardDialogProps)
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [recommendedPlaces, setRecommendedPlaces] = useState<any[]>([]);
-  
-  // 선택한 태그들을 저장할 배열
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // [질문 정의] 요청하신 3가지 질문과 매핑될 백엔드 태그
+  // [질문 정의] 백엔드 WizardTag와 일치하는 태그 사용
   const questions = [
     { 
       id: 1, 
@@ -51,39 +49,29 @@ export function WizardDialog({ open, onClose, onPlaceClick }: WizardDialogProps)
     }
   ];
 
-  // 답변 선택 핸들러
   const handleAnswer = (tag: string) => {
     const newTags = [...selectedTags, tag];
     setSelectedTags(newTags);
 
     if (step < questions.length - 1) {
-      // 다음 질문으로 이동
       setStep(step + 1);
     } else {
-      // 마지막 질문이면 추천 API 호출
       fetchRecommendations(newTags);
     }
   };
 
-  // 추천 API 호출
   const fetchRecommendations = async (tags: string[]) => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/wizard/recommend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-            tags: tags,
-            // 위치 정보가 있다면 추가 가능
-            // userLatitude: ..., 
-            // userLongitude: ...
-        }),
+        body: JSON.stringify({ tags: tags }),
       });
       
       const result = await response.json();
       
       if (result.success) {
-        // 데이터 매핑 (App.tsx와 동일한 구조로)
         const mapped = result.data.map((p: any) => ({
             id: p.placeId,
             name: p.name,
@@ -94,20 +82,18 @@ export function WizardDialog({ open, onClose, onPlaceClick }: WizardDialogProps)
             category: p.category,
         }));
         setRecommendedPlaces(mapped);
-        setStep(step + 1); // 결과 화면으로 이동
+        setStep(step + 1);
       } else {
         toast.error("추천 결과를 가져오지 못했습니다.");
-        onClose(); // 실패 시 닫기
+        onClose();
       }
     } catch (error) {
-      console.error(error);
       toast.error("서버 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 초기화 핸들러
   const handleReset = () => {
     setStep(0);
     setSelectedTags([]);
@@ -154,7 +140,6 @@ export function WizardDialog({ open, onClose, onPlaceClick }: WizardDialogProps)
                 ))}
               </div>
               <div className="mt-8 flex gap-2">
-                {/* 진행 표시 바 (Dots) */}
                 {questions.map((_, idx) => (
                     <div key={idx} className={`h-2 w-2 rounded-full ${idx === step ? 'bg-yellow-400' : 'bg-gray-200'}`} />
                 ))}

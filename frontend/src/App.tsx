@@ -31,10 +31,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [places, setPlaces] = useState<any[]>([]); 
-  // [수정] reviews 상태 삭제 (PlaceDetail에서 직접 관리함)
   const [loading, setLoading] = useState(true);
 
-  // 장소 데이터 매핑 헬퍼
   const mapPlaceData = (data: any[]) => {
     return data.map((p: any) => ({
       id: p.placeId,
@@ -87,7 +85,6 @@ export default function App() {
 
   const handlePlaceClick = (placeId: number) => {
     setSelectedPlaceId(placeId);
-    // [수정] 리뷰 로딩 로직 삭제 (PlaceDetail 컴포넌트 내부에서 처리)
     setCurrentPage("placeDetail");
   };
 
@@ -110,6 +107,11 @@ export default function App() {
     setIsLoggedIn(false);
     setCurrentPage("main");
     toast.success("로그아웃되었습니다!");
+  };
+
+  // [핵심] 무조건 메인 화면으로 이동하는 함수
+  const handleGoHome = () => {
+    setCurrentPage("main");
   };
 
   const handleSearchClick = () => {
@@ -154,29 +156,68 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case "login":
-        return <Login onLogin={handleLoginSuccess} onSignup={() => setCurrentPage("signup")} onFindAccount={(type) => setCurrentPage(type === "id" ? "findId" : "findPassword")} onBack={() => setCurrentPage("main")} />;
+        return <Login 
+            onLogin={handleLoginSuccess} 
+            onSignup={() => setCurrentPage("signup")} 
+            onFindAccount={(type) => setCurrentPage(type === "id" ? "findId" : "findPassword")} 
+            onBack={() => setCurrentPage("main")} 
+            onHome={handleGoHome} // [추가]
+        />;
       case "signup":
-        return <Signup onSignup={() => setCurrentPage("login")} onBack={() => setCurrentPage("main")} />;
+        return <Signup 
+            onSignup={() => setCurrentPage("login")} 
+            onBack={() => setCurrentPage("main")} // 뒤로가기: 메인 (또는 로그인)
+            onHome={handleGoHome} // [추가] 로고 클릭: 메인
+        />;
       case "findId":
-        return <FindAccount type="id" onBack={() => setCurrentPage("login")} />;
+        return <FindAccount 
+            type="id" 
+            onBack={() => setCurrentPage("login")} // 뒤로가기: 로그인
+            onHome={handleGoHome} // [추가] 로고 클릭: 메인
+        />;
       case "findPassword":
-        return <FindAccount type="password" onBack={() => setCurrentPage("login")} />;
+        return <FindAccount 
+            type="password" 
+            onBack={() => setCurrentPage("login")} 
+            onHome={handleGoHome} 
+        />;
       case "mypage":
-        return <MyPage onBack={() => setCurrentPage("main")} onLogout={handleLogout} />;
+        return <MyPage 
+            onBack={() => setCurrentPage("main")} 
+            onLogout={handleLogout} 
+            onHome={handleGoHome} 
+        />;
       case "placeDetail":
         if (!selectedPlace) return <div className="p-8 text-center">장소 정보를 찾을 수 없습니다.</div>;
         return (
-            // [수정] PlaceDetail에 필요한 props만 전달 (불필요한 reviews, 핸들러 제거)
             <PlaceDetail 
                 place={selectedPlace} 
                 isLoggedIn={isLoggedIn} 
                 onBack={() => setCurrentPage("main")} 
+                onHome={handleGoHome} 
             />
         );
       case "search":
-        return <SearchPage places={places} initialQuery={searchQuery} onBack={() => setCurrentPage("main")} onPlaceClick={handlePlaceClick} onWizardClick={() => setShowWizard(true)} onFilterClick={() => setShowFilter(true)} isLoggedIn={isLoggedIn} onLoginClick={() => setCurrentPage("login")} onSignupClick={() => setCurrentPage("signup")} onLogoutClick={handleLogout} onMyPageClick={() => setCurrentPage("mypage")} />;
+        return <SearchPage 
+            places={places} 
+            initialQuery={searchQuery} 
+            onBack={() => setCurrentPage("main")} 
+            onPlaceClick={handlePlaceClick} 
+            onWizardClick={() => setShowWizard(true)} 
+            onFilterClick={() => setShowFilter(true)} 
+            isLoggedIn={isLoggedIn} 
+            onLoginClick={() => setCurrentPage("login")} 
+            onSignupClick={() => setCurrentPage("signup")} 
+            onLogoutClick={handleLogout} 
+            onMyPageClick={() => setCurrentPage("mypage")}
+            onHome={handleGoHome} // [중요] 검색 페이지에도 onHome 전달
+        />;
       case "addPet":
-        return <PetForm onSubmit={() => {}} onBack={() => setCurrentPage("mypage")} />;
+        return <PetForm 
+            onSubmit={() => {}} 
+            onBack={() => setCurrentPage("mypage")} 
+            onHome={handleGoHome} 
+        />;
       case "main":
       default:
         return (
@@ -187,7 +228,7 @@ export default function App() {
                 onSignupClick={() => setCurrentPage("signup")} 
                 onLogoutClick={handleLogout} 
                 onMyPageClick={() => setCurrentPage("mypage")} 
-                onLogoClick={() => setCurrentPage("main")} 
+                onLogoClick={handleGoHome} // 메인에서도 로고 누르면 메인으로 (새로고침 효과)
                 onSearchClick={handleSearchClick}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}

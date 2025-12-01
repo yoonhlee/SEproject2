@@ -48,12 +48,14 @@ interface PlaceDetailProps {
   place: Place;
   isLoggedIn: boolean;
   onBack: () => void;
+  onHome: () => void;
 }
 
 export function PlaceDetail({
   place,
   isLoggedIn,
   onBack,
+  onHome
 }: PlaceDetailProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -187,7 +189,7 @@ export function PlaceDetail({
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-[2520px] mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
-          <button onClick={onBack} className="hover:opacity-70 transition-opacity">
+          <button onClick={onHome} className="hover:opacity-70 transition-opacity">
             <img src={logoImage} alt="어디가개" className="h-20" />
           </button>
           <div className="flex items-center gap-2">

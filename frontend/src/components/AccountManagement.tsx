@@ -20,12 +20,12 @@ import { toast } from "sonner";
 interface AccountManagementProps {
   user: any;
   onBack: () => void;
-  // 상위 컴포넌트(MyPage)의 상태를 업데이트하기 위한 콜백
   onUserUpdate: () => void; 
   onDeleteAccount: () => void;
+  onHome: () => void; // [추가]
 }
 
-export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount }: AccountManagementProps) {
+export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount, onHome }: AccountManagementProps) {
   const [formData, setFormData] = useState({
     nickname: "",
     email: "",
@@ -35,13 +35,12 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
     address: "",
   });
 
-  // 비밀번호 변경용 상태
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
   });
 
-  const [checks, setChecks] = useState({ nickname: true, email: true }); // 초기값은 본인 것이므로 true
+  const [checks, setChecks] = useState({ nickname: true, email: true }); 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
@@ -59,7 +58,6 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // 중복 확인 필요한 필드가 바뀌면 체크 상태 초기화 (단, 본인 값과 같으면 true)
     if (field === "nickname") {
       setChecks((prev) => ({ ...prev, nickname: value === user.nickname }));
     }
@@ -68,7 +66,6 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
     }
   };
 
-  // 중복 확인 API 호출
   const handleCheckDuplicate = async (field: "email" | "nickname") => {
     const value = formData[field];
     if (!value) return;
@@ -99,7 +96,6 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
     }
   };
 
-  // 정보 저장
   const handleSaveInfo = async () => {
     if (!checks.nickname) { alert("닉네임 중복 확인이 필요합니다."); return; }
     if (!checks.email) { alert("이메일 중복 확인이 필요합니다."); return; }
@@ -114,14 +110,14 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
         },
         body: JSON.stringify({
           ...formData,
-          profileImage: user.profilePhoto // 기존 이미지 유지
+          profileImage: user.profilePhoto 
         }),
       });
 
       const result = await response.json();
       if (result.success) {
         toast.success("회원 정보가 수정되었습니다.");
-        onUserUpdate(); // MyPage 데이터 갱신 트리거
+        onUserUpdate(); 
       } else {
         alert(result.message || "수정에 실패했습니다.");
       }
@@ -130,7 +126,6 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
     }
   };
 
-  // 비밀번호 변경
   const handleChangePassword = async () => {
     if (!passwordData.currentPassword || !passwordData.newPassword) {
       alert("비밀번호를 입력해주세요.");
@@ -162,7 +157,8 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-[800px] mx-auto px-6 h-20 flex items-center gap-4">
-          <button onClick={onBack}>
+          {/* [수정] 로고 클릭 시 메인 화면으로 이동 */}
+          <button onClick={onHome}>
             <img src={logoImage} alt="어디가개" className="h-20" />
           </button>
           <h1 className="text-xl font-bold">계정 관리</h1>
@@ -170,7 +166,6 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
       </div>
 
       <div className="max-w-[800px] mx-auto px-6 py-8 space-y-6">
-        {/* 1. 기본 정보 수정 섹션 */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="flex items-center gap-2 text-gray-700 font-medium">
@@ -183,84 +178,37 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount 
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>이름</Label>
-                <Input value={formData.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="이름" />
-              </div>
-              <div>
-                <Label>생년월일</Label>
-                <Input value={formData.birthdate} onChange={(e) => handleChange("birthdate", e.target.value)} placeholder="YYYYMMDD" maxLength={8} />
-              </div>
+              <div><Label>이름</Label><Input value={formData.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="이름" /></div>
+              <div><Label>생년월일</Label><Input value={formData.birthdate} onChange={(e) => handleChange("birthdate", e.target.value)} placeholder="YYYYMMDD" maxLength={8} /></div>
             </div>
-
-            <div>
-              <Label>닉네임 *</Label>
-              <div className="flex gap-2 mt-1">
-                <Input value={formData.nickname} onChange={(e) => handleChange("nickname", e.target.value)} />
-                <Button variant="outline" onClick={() => handleCheckDuplicate("nickname")}>중복확인</Button>
-              </div>
-            </div>
-
-            <div>
-              <Label>이메일 *</Label>
-              <div className="flex gap-2 mt-1">
-                <Input value={formData.email} onChange={(e) => handleChange("email", e.target.value)} />
-                <Button variant="outline" onClick={() => handleCheckDuplicate("email")}>중복확인</Button>
-              </div>
-            </div>
-
-            <div>
-              <Label>연락처</Label>
-              <Input value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="010-0000-0000" />
-            </div>
-
-            <div>
-              <Label>주소</Label>
-              <Input value={formData.address} onChange={(e) => handleChange("address", e.target.value)} placeholder="주소를 입력하세요" />
-            </div>
+            <div><Label>닉네임 *</Label><div className="flex gap-2 mt-1"><Input value={formData.nickname} onChange={(e) => handleChange("nickname", e.target.value)} /><Button variant="outline" onClick={() => handleCheckDuplicate("nickname")}>중복확인</Button></div></div>
+            <div><Label>이메일 *</Label><div className="flex gap-2 mt-1"><Input value={formData.email} onChange={(e) => handleChange("email", e.target.value)} /><Button variant="outline" onClick={() => handleCheckDuplicate("email")}>중복확인</Button></div></div>
+            <div><Label>연락처</Label><Input value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="010-0000-0000" /></div>
+            <div><Label>주소</Label><Input value={formData.address} onChange={(e) => handleChange("address", e.target.value)} placeholder="주소를 입력하세요" /></div>
           </div>
         </div>
 
-        {/* 2. 비밀번호 변경 섹션 */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
           <h2 className="text-gray-700 font-medium mb-6">비밀번호 변경</h2>
           <div className="space-y-4">
-            <div>
-              <Label>현재 비밀번호</Label>
-              <Input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
-            </div>
-            <div>
-              <Label>새 비밀번호</Label>
-              <Input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
-            </div>
+            <div><Label>현재 비밀번호</Label><Input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} /></div>
+            <div><Label>새 비밀번호</Label><Input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} /></div>
             <Button onClick={handleChangePassword} variant="outline" className="w-full">비밀번호 변경하기</Button>
           </div>
         </div>
 
-        {/* 3. 계정 삭제 섹션 */}
         <div className="bg-red-50 rounded-xl p-6 border border-red-100">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="w-5 h-5" />
-              <span className="font-medium">계정 삭제</span>
-            </div>
-            <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-              <Trash2 className="w-4 h-4 mr-2" /> 삭제하기
-            </Button>
+            <div className="flex items-center gap-2 text-red-600"><AlertCircle className="w-5 h-5" /><span className="font-medium">계정 삭제</span></div>
+            <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}><Trash2 className="w-4 h-4 mr-2" /> 삭제하기</Button>
           </div>
         </div>
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>계정 삭제</AlertDialogTitle>
-            <AlertDialogDescription>정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={onDeleteAccount} className="bg-red-500 hover:bg-red-600">삭제</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>계정 삭제</AlertDialogTitle><AlertDialogDescription>정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={onDeleteAccount} className="bg-red-500 hover:bg-red-600">삭제</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

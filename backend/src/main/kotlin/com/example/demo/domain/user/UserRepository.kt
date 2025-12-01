@@ -21,4 +21,7 @@ interface UserRepository : JpaRepository<User, Long> {
 
         // 닉네임 중복 확인
         fun existsByNickname(nickname: String): Boolean
+
+        // [추가] 이름 + 생년월일 + 이메일로 유저 찾기 (아이디 찾기용)
+    fun findByNameAndBirthdateAndEmail(name: String, birthdate: String, email: String): User?
 }
