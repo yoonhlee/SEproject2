@@ -7,14 +7,14 @@ interface HeaderProps {
   isLoggedIn: boolean;
   onLoginClick: () => void;
   onSignupClick: () => void;
-  onLogoutClick: () => void; // [확인] 여기 이름이 onLogoutClick 입니다.
+  onLogoutClick: () => void;
   onMyPageClick: () => void;
   onLogoClick: () => void;
   onSearchClick?: () => void;
   onWizardClick?: () => void;
   onFilterClick?: () => void;
   showSearch?: boolean;
-  searchMode?: boolean;
+  searchMode?: boolean; // 이제 UI 분기에는 안 쓰이지만 호환성을 위해 남겨둠
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onSearch?: () => void;
@@ -34,6 +34,7 @@ export function Header({
           
           {showSearch && (
             <div className="flex-1 max-w-2xl mx-8">
+              {/* [수정] 조건문 삭제하고 항상 Input 표시 */}
               <div className="w-full flex items-center justify-between px-6 py-3 border border-gray-300 hover:shadow-md rounded-full transition-shadow bg-white">
                 <Input 
                   value={searchQuery} 
@@ -61,7 +62,6 @@ export function Header({
             {isLoggedIn ? (
               <>
                 <button onClick={onMyPageClick} className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-full hover:shadow-md transition-shadow"><div className="bg-gray-700 p-1.5 rounded-full"><User className="w-4 h-4 text-white" /></div></button>
-                {/* [수정] onLogout -> onLogoutClick 으로 변경 */}
                 <Button onClick={onLogoutClick} variant="outline" className="rounded-full border-gray-300">로그아웃</Button>
               </>
             ) : (

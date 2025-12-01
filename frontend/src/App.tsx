@@ -31,8 +31,31 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [places, setPlaces] = useState<any[]>([]); 
-  const [reviews, setReviews] = useState<any[]>([]); // 리뷰 상태 추가
+  const [reviews, setReviews] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
+
+  // 장소 데이터 매핑 헬퍼 함수
+  const mapPlaceData = (data: any[]) => {
+    return data.map((p: any) => ({
+      id: p.placeId,
+      name: p.name,
+      image: p.photos && p.photos.length > 0 ? p.photos[0] : "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&q=80&w=1000",
+      description: p.address,
+      rating: p.avgRating,
+      reviewCount: p.reviewCount,
+      category: p.category,
+      lat: p.latitude || 35.8364,
+      lng: p.longitude || 128.7544,
+      address: p.address,
+      phone: p.phone || "전화번호 없음",
+      hours: p.operationHours || "운영시간 정보 없음",
+      parking: p.hasParking,
+      leadOff: p.isOffLeash,
+      maxDogs: 0,
+      allowedSizes: p.allowedSizes || [], 
+      details: p.petPolicy || "상세 정보가 없습니다." 
+    }));
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -50,30 +73,7 @@ export default function App() {
         const response = await fetch(`${API_BASE_URL}/api/places`);
         const result = await response.json();
         if (result.success) {
-          // [수정] PlaceDetail에서 필요한 모든 필드를 매핑합니다.
-          const mappedPlaces = result.data.map((p: any) => ({
-            id: p.placeId,
-            name: p.name,
-            // 이미지가 없으면 기본 이미지 사용
-            image: p.photos && p.photos.length > 0 ? p.photos[0] : "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&q=80&w=1000",
-            description: p.address, // 리스트용 간단 설명
-            rating: p.avgRating,
-            reviewCount: p.reviewCount,
-            category: p.category,
-            lat: p.latitude || 35.8364,
-            lng: p.longitude || 128.7544,
-            address: p.address,
-            phone: p.phone || "전화번호 없음",
-            hours: p.operationHours || "운영시간 정보 없음",
-            
-            // [중요] 상세 페이지용 추가 필드 매핑
-            parking: p.hasParking,
-            leadOff: p.isOffLeash,
-            maxDogs: 0, // 백엔드에 데이터가 없으면 기본값 0
-            allowedSizes: p.allowedSizes || [], // 견종 크기 배열
-            details: p.petPolicy || "상세 정보가 없습니다." // 상세 설명
-          }));
-          setPlaces(mappedPlaces);
+          setPlaces(mapPlaceData(result.data));
         }
       } catch (error) {
         console.error("장소 로딩 실패", error);
@@ -85,22 +85,18 @@ export default function App() {
     fetchPlaces();
   }, []);
 
-  // [추가] 장소 클릭 시 리뷰 데이터도 가져오는 로직 (선택 사항)
   const handlePlaceClick = async (placeId: number) => {
     setSelectedPlaceId(placeId);
-    
-    // 리뷰 데이터 가져오기 (백엔드 API 호출)
     try {
         const res = await fetch(`${API_BASE_URL}/api/places/${placeId}/reviews`);
         const data = await res.json();
         if (data.success) {
-            // 리뷰 데이터 매핑
             const mappedReviews = data.data.map((r: any) => ({
                 id: r.reviewId,
                 placeId: r.placeId,
                 userId: r.userId,
                 userName: r.userNickname,
-                userPhoto: "", // 프로필 사진이 없다면 빈 값
+                userPhoto: "",
                 rating: r.rating,
                 content: r.content,
                 photos: r.photos,
@@ -110,13 +106,11 @@ export default function App() {
         }
     } catch (e) {
         console.error("리뷰 로딩 실패", e);
-        setReviews([]); // 실패 시 빈 리뷰
+        setReviews([]);
     }
-
     setCurrentPage("placeDetail");
   };
 
-  // ... (handleLoginSuccess, handleLogout 등 기존 함수 유지) ...
   const handleLoginSuccess = (token: string, userOrId: any) => {
     localStorage.setItem("accessToken", token);
     let idToSave = (typeof userOrId === 'object' && userOrId !== null) ? userOrId.userId : userOrId;
@@ -139,13 +133,54 @@ export default function App() {
   };
 
   const handleSearchClick = () => {
-    // setSearchQuery("");  // 검색어 유지
     setCurrentPage("search");
   };
 
-  const handleFilterApply = (newFilters: FilterState) => {
+  // [수정] 필터 적용 핸들러 (백엔드 연동)
+  const handleFilterApply = async (newFilters: FilterState) => {
     setFilters(newFilters);
-    toast.success("필터가 적용되었습니다!");
+    setLoading(true);
+
+    try {
+        // 프론트엔드 필터 데이터를 백엔드 DTO 형식으로 변환
+        const requestBody = {
+            // 편의시설 중 'parking'이 있으면 true
+            hasParking: newFilters.amenities.includes("parking") ? true : null,
+            // 편의시설 중 'outdoor'가 있으면 true
+            isOutdoor: newFilters.amenities.includes("outdoor") ? true : null,
+            
+            // 견종 크기: 배열 그대로 전송 (SMALL, MEDIUM, LARGE)
+            dogSizes: newFilters.petSizes.length > 0 ? newFilters.petSizes : null,
+            
+            // 장소 유형: 백엔드 Enum(대문자)에 맞춰 변환 (cafe -> CAFE)
+            categories: newFilters.placeTypes.length > 0 
+                ? newFilters.placeTypes.map(t => t.toUpperCase()) 
+                : null
+        };
+
+        const response = await fetch(`${API_BASE_URL}/api/places/filter`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            // 필터링된 데이터로 교체
+            setPlaces(mapPlaceData(result.data));
+            toast.success(`총 ${result.data.length}개의 장소를 찾았습니다.`);
+            
+            // 결과 화면으로 이동 (선택사항)
+            setCurrentPage("search");
+        } else {
+            toast.error("검색 결과를 가져오지 못했습니다.");
+        }
+    } catch (error) {
+        console.error(error);
+        toast.error("서버 연결 실패");
+    } finally {
+        setLoading(false);
+    }
   };
 
   const selectedPlace = places.find((p) => p.id === selectedPlaceId);
@@ -167,7 +202,7 @@ export default function App() {
         return (
             <PlaceDetail 
                 place={selectedPlace} 
-                reviews={reviews} // [수정] 가져온 리뷰 전달
+                reviews={reviews} 
                 isLoggedIn={isLoggedIn} 
                 onBack={() => setCurrentPage("main")} 
                 onAddReview={() => { alert("리뷰 작성 기능 준비중"); }}
@@ -183,12 +218,24 @@ export default function App() {
       default:
         return (
           <div className="min-h-screen bg-white">
-            <Header isLoggedIn={isLoggedIn} onLoginClick={() => setCurrentPage("login")} onSignupClick={() => setCurrentPage("signup")} onLogoutClick={handleLogout} onMyPageClick={() => setCurrentPage("mypage")} onLogoClick={() => setCurrentPage("main")} onSearchClick={handleSearchClick} onWizardClick={() => setShowWizard(true)} onFilterClick={() => setShowFilter(true)} />
+            <Header 
+                isLoggedIn={isLoggedIn} 
+                onLoginClick={() => setCurrentPage("login")} 
+                onSignupClick={() => setCurrentPage("signup")} 
+                onLogoutClick={handleLogout} 
+                onMyPageClick={() => setCurrentPage("mypage")} 
+                onLogoClick={() => setCurrentPage("main")} 
+                onSearchClick={handleSearchClick}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onSearch={handleSearchClick}
+                onWizardClick={() => setShowWizard(true)} 
+                onFilterClick={() => setShowFilter(true)} 
+            />
             <main className="max-w-[2520px] mx-auto px-6 lg:px-20 py-12">
               {loading ? <div className="text-center py-20">데이터를 불러오는 중입니다...</div> : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 space-y-12">
-                    {/* [수정] 각 테마 섹션에 handlePlaceClick 전달 확인 */}
                     {["CAFE", "OUTDOOR", "RESTAURANT", "SWIMMING"].map((category) => (
                       <ThemeSection key={category} category={category} places={places} onPlaceClick={handlePlaceClick} onPlaceHover={setHighlightedPlaceId} />
                     ))}

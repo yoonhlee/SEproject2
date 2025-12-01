@@ -3,6 +3,9 @@ package com.example.demo.domain.place
 import com.example.demo.domain.place.dto.PlaceCreateRequest
 import com.example.demo.domain.place.dto.PlaceDtoResponse
 import com.example.demo.domain.place.dto.PlaceUpdateRequest
+// [중요] 아래 import들이 꼭 있어야 합니다!
+import com.example.demo.domain.place.dto.PlaceFilterRequest 
+import com.example.demo.domain.place.model.LocationType
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,7 +25,6 @@ class PlaceService(
             operationHours = request.operationHours,
             petPolicy = request.petPolicy,
 
-            // [추가 매핑]
             category = request.category,
             locationType = request.locationType,
             hasParking = request.hasParking,
@@ -31,7 +33,6 @@ class PlaceService(
             latitude = request.latitude,
             longitude = request.longitude
         ).apply {
-            // Set 타입 데이터 추가
             this.allowedSizes.addAll(request.allowedSizes)
             this.photos.addAll(request.photos)
         }
@@ -46,7 +47,6 @@ class PlaceService(
         val place = placeRepository.findByIdOrNull(placeId)
             ?: throw IllegalArgumentException("존재하지 않는 장소입니다.")
 
-        // [수정 메서드 호출]
         place.updateInfo(
             name = request.name,
             address = request.address,
@@ -68,6 +68,15 @@ class PlaceService(
         return PlaceDtoResponse.from(place)
     }
 
+    // 장소 삭제
+    @Transactional
+    fun deletePlace(placeId: Long) {
+        val place = placeRepository.findByIdOrNull(placeId)
+            ?: throw IllegalArgumentException("존재하지 않는 장소입니다.")
+        
+        placeRepository.delete(place)
+    }
+
     // 전체 장소 조회
     @Transactional(readOnly = true)
     fun getAllPlaces(): List<PlaceDtoResponse> {
@@ -85,19 +94,37 @@ class PlaceService(
     // 장소 검색 (이름 또는 주소)
     @Transactional(readOnly = true)
     fun searchPlaces(keyword: String): List<PlaceDtoResponse> {
-        // 이름이나 주소에 키워드가 포함된 장소 검색
         val places = placeRepository.findByNameContainingIgnoreCase(keyword)
             .ifEmpty { placeRepository.findByAddressContainingIgnoreCase(keyword) }
 
         return places.map { PlaceDtoResponse.from(it) }
     }
 
-    // [추가] 장소 삭제 로직
-    @Transactional
-    fun deletePlace(placeId: Long) {
-        val place = placeRepository.findByIdOrNull(placeId)
-            ?: throw IllegalArgumentException("존재하지 않는 장소입니다.")
-        
-        placeRepository.delete(place)
+    // [추가] 필터 검색 기능
+    @Transactional(readOnly = true)
+    fun searchByFilter(request: PlaceFilterRequest): List<PlaceDtoResponse> {
+        val allPlaces = placeRepository.findAll()
+
+        val filtered = allPlaces.filter { place ->
+            // 1. 카테고리 필터
+            val matchCategory = if (request.categories.isNullOrEmpty()) true
+            else request.categories.contains(place.category)
+
+            // 2. 견종 크기 필터
+            val matchSize = if (request.dogSizes.isNullOrEmpty()) true
+            else place.allowedSizes.any { it in request.dogSizes }
+
+            // 3. 주차 여부
+            val matchParking = if (request.hasParking == true) place.hasParking else true
+
+            // 4. 야외 여부 (OUTDOOR 또는 BOTH)
+            val matchOutdoor = if (request.isOutdoor == true) {
+                place.locationType == LocationType.OUTDOOR || place.locationType == LocationType.BOTH
+            } else true
+
+            matchCategory && matchSize && matchParking && matchOutdoor
+        }
+
+        return filtered.map { PlaceDtoResponse.from(it) }
     }
 }
