@@ -27,7 +27,7 @@ interface Pet {
   birthday?: string;
   weight?: number;
   personality?: string;
-  photo?: string;
+  // photo 제거됨
 }
 
 interface Review {
@@ -88,7 +88,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
               phone: userData.data.phone || "010-0000-0000",
               birthdate: userData.data.birthdate || "",
               address: userData.data.address || "",
-              profilePhoto: userData.data.profileImage
+              // profileImage 제거 (이제 안 씀)
           });
       } else {
           throw new Error(userData.message);
@@ -110,13 +110,13 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
               gender: p.gender,
               birthday: p.birthDate ? p.birthDate.replace(/-/g, "") : "", 
               weight: p.weight,
-              personality: p.specialNotes,
-              photo: p.photo
+              personality: p.specialNotes
+              // photo 제거
           }));
           setPets(mappedPets);
       }
 
-      // 3. 내 리뷰 목록 조회 (수정됨: API 호출 및 데이터 매핑)
+      // 3. 내 리뷰 목록 조회
       const reviewRes = await fetch(`${API_BASE_URL}/api/users/${userId}/reviews`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -126,7 +126,7 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
           const mappedReviews = reviewData.data.map((r: any) => ({
               id: r.reviewId,
               placeId: r.placeId,
-              placeName: r.placeName, // 백엔드 DTO에 추가된 필드
+              placeName: r.placeName, 
               rating: r.rating,
               content: r.content,
               date: new Date(r.createdAt).toLocaleDateString()
@@ -163,8 +163,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
           name: user.name,
           birthdate: user.birthdate,
           phone: user.phone,
-          address: user.address,
-          profileImage: user.profilePhoto
+          address: user.address
+          // profileImage 전송 안 함
         }),
       });
 
@@ -225,8 +225,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         birthDate: formatBirthDate(petData.birthday),
         age: petData.age, 
         weight: Number(petData.weight) || null,
-        specialNotes: petData.personality,
-        photo: petData.photo
+        specialNotes: petData.personality
+        // photo 제거
     };
 
     try {
@@ -257,8 +257,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
         birthDate: formatBirthDate(petData.birthday),
         age: petData.age,
         weight: Number(petData.weight) || null,
-        specialNotes: petData.personality,
-        photo: petData.photo
+        specialNotes: petData.personality
+        // photo 제거
     };
 
     try {
@@ -353,8 +353,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
           <div className="bg-white rounded-2xl border border-gray-200 p-8">
             <h2 className="flex items-center gap-2 mb-6 text-gray-700"><User className="w-5 h-5" /> 사용자 프로필</h2>
             <div className="flex flex-col items-center mb-6">
-              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4 overflow-hidden border-2 border-gray-100">
-                {/* [수정] 사진 표시 로직 제거, 항상 이니셜 표시 */}
+              {/* [수정] 사진 표시 제거, 항상 이니셜 표시 */}
+              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4 border-2 border-gray-100">
                 <span className="text-4xl text-gray-600">{profileInitial}</span>
               </div>
               <h3 className="text-2xl text-gray-900 mb-1">{user.nickname}</h3>
@@ -376,8 +376,8 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
                 {pets.map((pet) => (
                     <div key={pet.id} className="border border-gray-200 rounded-xl p-4 relative cursor-pointer hover:border-yellow-300 transition-colors" onClick={() => handlePetClick(pet.id)}>
                     <div className="flex items-start justify-between mb-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
-                            {/* [수정] 사진 표시 로직 제거, 항상 강아지 아이콘 표시 */}
+                        {/* [수정] 사진 표시 제거, 항상 강아지 아이콘 표시 */}
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center border border-gray-100">
                             <Dog className="w-6 h-6 text-gray-500" />
                         </div>
                         <button 
@@ -408,7 +408,6 @@ export function MyPage({ onBack, onLogout }: MyPageProps) {
             <h2 className="text-lg text-gray-700 font-medium">최근 작성한 리뷰</h2>
           </div>
           
-          {/* [확인] 리뷰 목록 표시 로직 */}
           {reviews.length === 0 ? (
             <div className="space-y-4 text-center py-4 text-gray-500">작성된 리뷰가 없습니다.</div>
           ) : (
