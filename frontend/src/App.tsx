@@ -123,11 +123,24 @@ export default function App() {
     setLoading(true);
 
     try {
+        // 1. 카테고리 리스트 구성 (프론트 필터 ID -> 백엔드 Enum 매핑)
+        const categories: string[] = [];
+        if (newFilters.amenities.includes("cafe")) categories.push("CAFE");
+        if (newFilters.amenities.includes("restaurant")) categories.push("RESTAURANT");
+        if (newFilters.amenities.includes("exercise")) categories.push("PLAYGROUND"); // 운동 -> PLAYGROUND
+        if (newFilters.amenities.includes("water")) categories.push("SWIMMING");      // 물놀이 -> SWIMMING
+        if (newFilters.amenities.includes("grooming")) categories.push("BEAUTY");     // 미용 -> BEAUTY (Enum 추가 필요)
+
+        // 2. 백엔드 요청 데이터 구성 (PlaceFilterRequest 구조)
         const requestBody = {
+            // Boolean 필터들 (체크되어 있으면 true, 아니면 null)
             hasParking: newFilters.amenities.includes("parking") ? true : null,
-            isOutdoor: newFilters.amenities.includes("outdoor") ? true : null,
+            hasWifi: newFilters.amenities.includes("wifi") ? true : null,
+            isOutdoor: newFilters.amenities.includes("outdoor") ? true : null, // 야외
+            
+            // 리스트 필터들
             dogSizes: newFilters.petSizes.length > 0 ? newFilters.petSizes : null,
-            categories: newFilters.placeTypes.length > 0 ? newFilters.placeTypes.map(t => t.toUpperCase()) : null
+            categories: categories.length > 0 ? categories : null
         };
 
         const response = await fetch(`${API_BASE_URL}/api/places/filter`, {
@@ -145,6 +158,7 @@ export default function App() {
             toast.error("검색 결과를 가져오지 못했습니다.");
         }
     } catch (error) {
+        console.error(error);
         toast.error("서버 연결 실패");
     } finally {
         setLoading(false);

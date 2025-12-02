@@ -1,5 +1,7 @@
 package com.example.demo.domain.user
+
 import com.example.demo.domain.pet.Pet
+import com.example.demo.domain.review.Review // [추가] 리뷰 엔티티 import
 import jakarta.persistence.*
 import com.example.demo.global.entity.BaseTimeEntity
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -22,15 +24,22 @@ class User (
     @Column(length = 500)
     var profileImage: String? = null,
 
-    // [추가된 필드들]
+    // 추가 정보 필드들
     var name: String? = null,
     var birthdate: String? = null,
     var phone: String? = null,
     var address: String? = null,
 
+    // 1. 주인(1) : 펫(N) 관계 (주인 삭제 시 펫도 삭제)
     @JsonIgnore
     @OneToMany(mappedBy = "owner", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val pets: MutableList<Pet> = mutableListOf()
+    val pets: MutableList<Pet> = mutableListOf(),
+
+    // [추가] 2. 유저(1) : 리뷰(N) 관계 (유저 삭제 시 리뷰도 삭제)
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val reviews: MutableList<Review> = mutableListOf()
+
 ): BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,7 +55,6 @@ class User (
     var isActive: Boolean = true
         protected set
 
-    // [중요] UserService에서 호출하는 메서드와 파라미터가 일치해야 함
     fun updateProfile(nickname: String, email: String, name: String?, birthdate: String?, phone: String?, address: String?, profileImage: String?) {
         this.nickname = nickname
         this.email = email

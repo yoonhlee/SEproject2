@@ -27,7 +27,7 @@ interface Pet {
   birthday?: string;
   weight?: number;
   personality?: string;
-  photo?: string;
+  // photo 제거됨
 }
 
 interface Review {
@@ -42,7 +42,7 @@ interface Review {
 interface MyPageProps {
   onBack: () => void;
   onLogout: () => void;
-  onHome: () => void; // [확인] 메인 이동 함수 받음
+  onHome: () => void;
 }
 
 export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
@@ -89,7 +89,7 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
               phone: userData.data.phone || "010-0000-0000",
               birthdate: userData.data.birthdate || "",
               address: userData.data.address || "",
-              profilePhoto: userData.data.profileImage
+              // profileImage 제거됨
           });
       } else {
           throw new Error(userData.message);
@@ -111,8 +111,8 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
               gender: p.gender,
               birthday: p.birthDate ? p.birthDate.replace(/-/g, "") : "", 
               weight: p.weight,
-              personality: p.specialNotes,
-              photo: p.photo
+              personality: p.specialNotes
+              // photo 제거됨
           }));
           setPets(mappedPets);
       }
@@ -164,8 +164,8 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
           name: user.name,
           birthdate: user.birthdate,
           phone: user.phone,
-          address: user.address,
-          profileImage: user.profilePhoto
+          address: user.address
+          // profileImage 제거됨
         }),
       });
 
@@ -226,8 +226,8 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
         birthDate: formatBirthDate(petData.birthday),
         age: petData.age, 
         weight: Number(petData.weight) || null,
-        specialNotes: petData.personality,
-        photo: petData.photo
+        specialNotes: petData.personality
+        // photo 제거됨
     };
 
     try {
@@ -258,8 +258,8 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
         birthDate: formatBirthDate(petData.birthday),
         age: petData.age,
         weight: Number(petData.weight) || null,
-        specialNotes: petData.personality,
-        photo: petData.photo
+        specialNotes: petData.personality
+        // photo 제거됨
     };
 
     try {
@@ -304,18 +304,8 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
     </div>
   );
 
-  // 1. [반려동물 추가] 화면
-  if (showAddPet) {
-    return (
-        <PetForm 
-            onSubmit={handleAddPetSubmit} 
-            onBack={() => setShowAddPet(false)} 
-            onHome={onHome} // [수정] 메인 이동 기능 전달
-        />
-    );
-  }
+  if (showAddPet) return <PetForm onSubmit={handleAddPetSubmit} onBack={() => setShowAddPet(false)} onHome={onHome} />;
 
-  // 2. [반려동물 상세 & 수정] 화면
   if (selectedPet) {
     return (
       <>
@@ -324,7 +314,7 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
             onBack={() => setSelectedPetId(null)} 
             onEdit={handlePetEdit} 
             onDelete={handlePetDelete} 
-            onHome={onHome} // [수정] 메인 이동 기능 전달
+            onHome={onHome}
         />
         {showPetEdit && (
             <PetEditDialog 
@@ -332,14 +322,13 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
                 onClose={() => setShowPetEdit(false)} 
                 pet={selectedPet} 
                 onSave={handleUpdatePetSubmit} 
-                onHome={onHome} // [수정] 메인 이동 기능 전달 (PetEditDialog -> PetForm)
+                onHome={onHome}
             />
         )}
       </>
     );
   }
 
-  // 3. [계정 관리] 화면
   if (showAccountManagement) {
     return (
       <AccountManagement 
@@ -347,19 +336,17 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
         onBack={() => setShowAccountManagement(false)} 
         onUserUpdate={fetchMyData} 
         onDeleteAccount={handleDeleteAccount} 
-        onHome={onHome} // [수정] 메인 이동 기능 전달
+        onHome={onHome}
       />
     );
   }
 
   const profileInitial = user.nickname ? user.nickname.charAt(0) : "U";
 
-  // 4. [마이페이지 메인] 화면
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
         <div className="max-w-[2520px] mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
-          {/* [확인] 로고 클릭 시 onHome */}
           <button onClick={onHome} className="hover:opacity-70 transition-opacity"><img src={logoImage} alt="어디가개" className="h-20" /></button>
           <Button onClick={onLogout} variant="outline">로그아웃</Button>
         </div>
@@ -370,14 +357,15 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
           <div className="bg-white rounded-2xl border border-gray-200 p-8">
             <h2 className="flex items-center gap-2 mb-6 text-gray-700"><User className="w-5 h-5" /> 사용자 프로필</h2>
             <div className="flex flex-col items-center mb-6">
-              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4 overflow-hidden border-2 border-gray-100">
+              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-4 border-2 border-gray-100">
+                {/* 사진 표시 제거, 항상 이니셜 표시 */}
                 <span className="text-4xl text-gray-600">{profileInitial}</span>
               </div>
               <h3 className="text-2xl text-gray-900 mb-1">{user.nickname}</h3>
               <p className="text-gray-600 mb-2">{user.email}</p>
               <p className="text-yellow-600 mb-4">반려동물 {pets.length}마리</p>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => setShowProfileEdit(true)}><Edit2 className="w-4 h-4" /> 수정</Button>
+                {/* [수정] 수정 버튼 제거됨. 오직 계정 관리 버튼만 존재 */}
                 <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => setShowAccountManagement(true)}><Settings className="w-4 h-4" /> 계정 관리</Button>
               </div>
             </div>
@@ -392,7 +380,8 @@ export function MyPage({ onBack, onLogout, onHome }: MyPageProps) {
                 {pets.map((pet) => (
                     <div key={pet.id} className="border border-gray-200 rounded-xl p-4 relative cursor-pointer hover:border-yellow-300 transition-colors" onClick={() => handlePetClick(pet.id)}>
                     <div className="flex items-start justify-between mb-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center border border-gray-100">
+                            {/* 사진 표시 제거, 항상 강아지 아이콘 표시 */}
                             <Dog className="w-6 h-6 text-gray-500" />
                         </div>
                         <button 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import {
-  Star, MapPin, Clock, Share2, Heart, Users, Shield, PawPrint, X, User
+  Star, MapPin, Clock, Users, Shield, PawPrint, X, User // [수정] Share2, Heart 제거됨
 } from "lucide-react";
 import { ImageWithFallback } from "./ui/ImageWithFallback";
 import logoImage from "../assets/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
@@ -55,7 +55,7 @@ export function PlaceDetail({
   place,
   isLoggedIn,
   onBack,
-  onHome
+  onHome,
 }: PlaceDetailProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -65,7 +65,9 @@ export function PlaceDetail({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showWriteDialog, setShowWriteDialog] = useState(false);
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null);
-  const [isSaved, setIsSaved] = useState(false);
+  
+  // [수정] isSaved 상태 제거됨
+  
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   const currentUserId = Number(localStorage.getItem("userId") || 0);
@@ -106,7 +108,6 @@ export function PlaceDetail({
     setShowWriteDialog(true);
   };
 
-  // [수정] 리뷰 등록 핸들러 (에러 메시지 처리 강화)
   const handleCreateReview = async (rating: number, content: string, photos: string[]) => {
     const token = localStorage.getItem("accessToken");
     try {
@@ -119,14 +120,13 @@ export function PlaceDetail({
             body: JSON.stringify({ rating, content, photos })
         });
         
-        const result = await res.json(); // 응답 내용을 먼저 받습니다.
+        const result = await res.json();
 
         if (res.ok && result.success) {
             toast.success("리뷰가 등록되었습니다.");
             setShowWriteDialog(false);
             fetchReviews(); 
         } else {
-            // 서버가 보낸 에러 메시지(예: "20자 이상 작성해주세요")를 띄웁니다.
             toast.error(result.message || "리뷰 등록에 실패했습니다.");
         }
     } catch (e) {
@@ -189,21 +189,17 @@ export function PlaceDetail({
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-[2520px] mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
+          {/* 로고 버튼 */}
           <button onClick={onHome} className="hover:opacity-70 transition-opacity">
             <img src={logoImage} alt="어디가개" className="h-20" />
           </button>
+          
+          {/* [수정] 공유, 저장 버튼이 있던 자리 (삭제됨) */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="hover:bg-gray-100">
-              <Share2 className="w-4 h-4 mr-2" /> 공유
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`hover:bg-gray-100 ${isSaved ? 'text-yellow-500' : ''}`}
-              onClick={() => setIsSaved(!isSaved)}
-            >
-              <Heart className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} /> 저장
-            </Button>
+             {/* 우측 상단 버튼 영역이 비워졌습니다. 필요하다면 닫기 버튼 등을 추가할 수 있습니다. */}
+             <Button variant="ghost" size="icon" onClick={onBack}>
+                <X className="w-6 h-6 text-gray-500" />
+             </Button>
           </div>
         </div>
       </div>

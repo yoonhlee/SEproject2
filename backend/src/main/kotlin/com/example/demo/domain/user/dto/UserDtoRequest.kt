@@ -21,6 +21,12 @@ data class UserRegisterRequest(
     @field:Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다")
     val nickname: String?,
 
+    // [추가] 회원가입 시 함께 저장할 추가 정보들
+    val name: String?,
+    val birthdate: String?,
+    val phone: String?,
+    val address: String?,
+    
     val profileImage: String? = null
 )
 
@@ -32,7 +38,6 @@ data class UserLoginRequest(
     val passwordRaw: String?
 )
 
-// ID 찾기 요청
 data class FindIdRequest(
     @field:NotBlank(message = "이름을 입력해주세요.")
     val name: String?,
@@ -45,7 +50,6 @@ data class FindIdRequest(
     val email: String?
 )
 
-// 비밀번호 찾기(임시 비밀번호 발급) 요청
 data class FindPasswordRequest(
     @field:NotBlank(message = "아이디를 입력해주세요.")
     val loginId: String?,
@@ -55,7 +59,6 @@ data class FindPasswordRequest(
     val email: String?
 )
 
-// [수정된 부분] 프로필 수정 요청 (필드 추가됨)
 data class UpdateProfileRequest(
     @field:NotBlank(message = "닉네임을 입력해주세요.")
     @field:Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다")

@@ -29,16 +29,22 @@ class UserService(
         if (userRepository.existsByEmail(request.email!!)) {
             throw IllegalArgumentException("이미 사용 중인 이메일입니다")
         }
+        
+        if (userRepository.existsByNickname(request.nickname!!)) {
+            throw IllegalArgumentException("이미 사용 중인 닉네임입니다")
+        }
 
-        // 비밀번호 암호화
         val encodedPassword = passwordEncoder.encode(request.passwordRaw!!)
 
-        // 사용자 생성
         val user = User(
             loginId = request.loginId,
             email = request.email,
             passwordHash = encodedPassword,
-            nickname = request.nickname!!,
+            nickname = request.nickname,
+            name = request.name,
+            birthdate = request.birthdate,
+            phone = request.phone,
+            address = request.address,
             profileImage = request.profileImage
         )
 
@@ -70,7 +76,6 @@ class UserService(
 
     @Transactional(readOnly = true)
     fun findLoginId(request: FindIdRequest): String {
-        // [수정] 이름, 생년월일, 이메일 모두 일치하는지 확인
         val user = userRepository.findByNameAndBirthdateAndEmail(
             request.name!!, 
             request.birthdate!!, 
@@ -80,7 +85,6 @@ class UserService(
         return user.loginId
     }
 
-    // 비밀번호 찾기 -> 임시 비밀번호 발급
     @Transactional
     fun resetPassword(request: FindPasswordRequest): String {
         val user = userRepository.findByLoginIdAndEmail(request.loginId!!, request.email!!)
@@ -108,26 +112,16 @@ class UserService(
         return UserResponse.from(user)
     }
 
-    @Transactional(readOnly = true)
-    fun getUserByEmail(email: String): UserResponse {
-        val user = userRepository.findByEmail(email)
-            ?: throw IllegalArgumentException("존재하지 않는 사용자입니다")
-        return UserResponse.from(user)
-    }
-
-    // [수정된 부분] 프로필 업데이트 (모든 필드 반영)
     @Transactional
     fun updateProfile(userId: Long, request: UpdateProfileRequest): UserResponse {
         val user = userRepository.findById(userId).orElseThrow {
             IllegalArgumentException("존재하지 않는 사용자입니다")
         }
 
-        // 이메일 변경 시 중복 검사
         if (request.email != user.email && userRepository.existsByEmail(request.email!!)) {
             throw IllegalArgumentException("이미 사용 중인 이메일입니다.")
         }
         
-        // 닉네임 변경 시 중복 검사
         if (request.nickname != user.nickname && userRepository.existsByNickname(request.nickname!!)) {
             throw IllegalArgumentException("이미 사용 중인 닉네임입니다.")
         }
@@ -159,12 +153,14 @@ class UserService(
         user.updatePassword(newEncodedPassword)
     }
 
+    // [수정] 계정 완전 삭제 (데이터베이스에서 제거)
     @Transactional
     fun deleteAccount(userId: Long) {
         val user = userRepository.findById(userId).orElseThrow {
             IllegalArgumentException("존재하지 않는 사용자입니다")
         }
-        user.deactivate()
+        // user.deactivate() // 기존: 비활성화
+        userRepository.delete(user) // 수정: 영구 삭제 (Cascade 설정으로 펫, 리뷰도 자동 삭제됨)
     }
 
     @Transactional(readOnly = true)
@@ -173,7 +169,6 @@ class UserService(
             .map { UserResponse.from(it) }
     }
 
-    // 중복 확인용 함수들
     @Transactional(readOnly = true)
     fun checkLoginIdDuplicate(loginId: String): Boolean {
         return userRepository.existsByLoginId(loginId)

@@ -47,65 +47,48 @@ class WizardService(
         request: WizardRecommendRequest,
         sort: String = "distance"
     ): List<PlaceDtoResponse> {
-
-        // 1. 사용자가 선택한 태그 모음
         val selectedTags = request.tags.toSet()
-
-        // 2. 전체 장소 조회
         val allPlaces = placeRepository.findAll()
 
-        // 3. 필터링 (교집합 찾기)
         val filteredPlaces = allPlaces.map { place ->
-            // 거리 계산 (위치 정보가 있을 때만)
             val dist = if (request.userLatitude != null && request.userLongitude != null) {
                 DistanceCalculator.calculate(
                     request.userLatitude, request.userLongitude,
                     place.latitude ?: 0.0, place.longitude ?: 0.0
                 )
-            } else {
-                0.0 // 위치 정보 없으면 거리 0 취급
-            }
+            } else 0.0
             Pair(place, dist)
         }.filter { (place, _) ->
-            // [핵심] 매칭 로직 호출
             isPlaceMatchedWithTags(place, selectedTags)
         }
 
-        // 4. 정렬 (기본: 거리순, 옵션: 평점순/리뷰순)
         val sortedList = when (sort) {
             "rating" -> filteredPlaces.sortedByDescending { it.first.avgRating }
             "popular" -> filteredPlaces.sortedByDescending { it.first.reviewCount }
-            else -> filteredPlaces.sortedBy { it.second } // 거리순 (가까운 순)
+            else -> filteredPlaces.sortedBy { it.second }
         }
 
-        // 5. 상위 3개 추천
-        return sortedList.take(3).map { (place, _) ->
-            PlaceDtoResponse.from(place)
-        }
+        return sortedList.take(3).map { (place, _) -> PlaceDtoResponse.from(place) }
     }
 
-    /**
-     * 장소가 사용자의 선택 태그와 맞는지 검사하는 함수 (교집합 로직)
-     */
     private fun isPlaceMatchedWithTags(place: Place, tags: Set<WizardTag>): Boolean {
-
-        // Q1. 크기 매칭 (필수: 장소가 해당 크기를 허용해야 함)
+        // Q1. 크기 (필수 교집합)
         if (tags.contains(WizardTag.SMALL) && !place.allowedSizes.contains(DogSize.SMALL)) return false
         if (tags.contains(WizardTag.MEDIUM) && !place.allowedSizes.contains(DogSize.MEDIUM)) return false
         if (tags.contains(WizardTag.LARGE) && !place.allowedSizes.contains(DogSize.LARGE)) return false
 
-        // Q2. 컨디션 매칭 (활동량)
+        // Q2. 컨디션 (활발함 vs 조용함)
         if (tags.contains(WizardTag.ENERGY_HIGH)) {
-            // 활발함 -> 야외, 운동장, 공원, 물놀이 등
-            val isHighEnergy = place.locationType == LocationType.OUTDOOR || 
-                               place.locationType == LocationType.BOTH ||
+            // 활발함 -> 오프리쉬 가능(isOffLeash=true)하거나 야외(OUTDOOR)여야 함
+            val isHighEnergy = place.isOffLeash || 
+                               place.locationType == LocationType.OUTDOOR || 
                                place.category == PlaceCategory.PLAYGROUND ||
                                place.category == PlaceCategory.PARK ||
                                place.category == PlaceCategory.SWIMMING
             if (!isHighEnergy) return false
         }
         if (tags.contains(WizardTag.ENERGY_LOW)) {
-            // 조용함 -> 실내, 카페, 음식점, 숙소
+            // 조용함 -> 실내(INDOOR)거나 카페/숙소 등 정적인 곳
             val isLowEnergy = place.locationType == LocationType.INDOOR || 
                               place.category == PlaceCategory.CAFE ||
                               place.category == PlaceCategory.RESTAURANT ||
@@ -113,28 +96,29 @@ class WizardService(
             if (!isLowEnergy) return false
         }
 
-        // Q3. 장소 취향 매칭
+        // Q3. 장소 취향 (자연 vs 도시 vs 프라이빗)
         if (tags.contains(WizardTag.TYPE_NATURE)) {
-            // 자연친화적 -> 야외, 공원, 물놀이
+            // 자연친화적 -> 야외(OUTDOOR)거나 공원
             val isNature = place.locationType == LocationType.OUTDOOR || 
                            place.locationType == LocationType.BOTH ||
-                           place.category == PlaceCategory.PARK ||
-                           place.category == PlaceCategory.SWIMMING
+                           place.category == PlaceCategory.PARK
             if (!isNature) return false
         }
         if (tags.contains(WizardTag.TYPE_CITY)) {
-            // 도시적 -> 실내, 카페, 음식점
+            // 도시적 -> 실내(INDOOR)거나 카페/음식점/미용/와이파이 있음
             val isCity = place.locationType == LocationType.INDOOR ||
                          place.category == PlaceCategory.CAFE ||
-                         place.category == PlaceCategory.RESTAURANT
+                         place.category == PlaceCategory.RESTAURANT ||
+                         place.category == PlaceCategory.BEAUTY ||
+                         place.hasWifi // 도시적인 곳은 와이파이가 보통 있음
             if (!isCity) return false
         }
         if (tags.contains(WizardTag.TYPE_PRIVATE)) {
-            // 프라이빗 -> 숙소 (또는 나중에 Private룸 속성이 생기면 추가)
-            val isPrivate = place.category == PlaceCategory.ACCOMMODATION
+            // 프라이빗 -> 숙소(ACCOMMODATION) 또는 오프리쉬 가능한 곳(우리끼리 놀기)
+            val isPrivate = place.category == PlaceCategory.ACCOMMODATION || place.isOffLeash
             if (!isPrivate) return false
         }
 
-        return true // 모든 조건을 통과하면 true
+        return true
     }
 }

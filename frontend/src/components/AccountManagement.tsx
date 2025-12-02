@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Settings, Trash2, Check, AlertCircle } from "lucide-react";
+import { Settings, Trash2, AlertCircle } from "lucide-react";
 import logoImage from "../assets/13429f3bf73f16f4f94cb74ce47b8a5ef9aa39a9.png";
 import {
   AlertDialog,
@@ -22,7 +22,7 @@ interface AccountManagementProps {
   onBack: () => void;
   onUserUpdate: () => void; 
   onDeleteAccount: () => void;
-  onHome: () => void; // [추가]
+  onHome: () => void;
 }
 
 export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount, onHome }: AccountManagementProps) {
@@ -57,7 +57,17 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount,
   }, [user]);
 
   const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "birthdate" || field === "phone") {
+        const numericValue = value.replace(/[^0-9]/g, ""); 
+        
+        if (field === "birthdate" && numericValue.length > 8) return;
+        if (field === "phone" && numericValue.length > 11) return;
+
+        setFormData((prev) => ({ ...prev, [field]: numericValue }));
+    } else {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+
     if (field === "nickname") {
       setChecks((prev) => ({ ...prev, nickname: value === user.nickname }));
     }
@@ -97,8 +107,22 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount,
   };
 
   const handleSaveInfo = async () => {
+    if (!formData.name || !formData.birthdate || !formData.phone || !formData.nickname || !formData.email) {
+        alert("필수 정보(*표시)를 모두 입력해주세요.");
+        return;
+    }
+
     if (!checks.nickname) { alert("닉네임 중복 확인이 필요합니다."); return; }
     if (!checks.email) { alert("이메일 중복 확인이 필요합니다."); return; }
+
+    if (formData.birthdate.length !== 8) {
+        alert("생년월일은 8자리 숫자로 입력해주세요. (예: 19900101)");
+        return;
+    }
+    if (formData.phone.length !== 11) {
+        alert("연락처는 11자리 숫자로 입력해주세요. (예: 01012345678)");
+        return;
+    }
 
     const token = localStorage.getItem("accessToken");
     try {
@@ -157,8 +181,8 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount,
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-[800px] mx-auto px-6 h-20 flex items-center gap-4">
-          {/* [수정] 로고 클릭 시 메인 화면으로 이동 */}
-          <button onClick={onHome}>
+          {/* [수정] 로고 클릭 시 onHome 대신 onBack(뒤로가기) 실행 */}
+          <button onClick={onBack}>
             <img src={logoImage} alt="어디가개" className="h-20" />
           </button>
           <h1 className="text-xl font-bold">계정 관리</h1>
@@ -178,12 +202,34 @@ export function AccountManagement({ user, onBack, onUserUpdate, onDeleteAccount,
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><Label>이름</Label><Input value={formData.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="이름" /></div>
-              <div><Label>생년월일</Label><Input value={formData.birthdate} onChange={(e) => handleChange("birthdate", e.target.value)} placeholder="YYYYMMDD" maxLength={8} /></div>
+              <div>
+                  <Label>이름 *</Label>
+                  <Input value={formData.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="이름" />
+              </div>
+              <div>
+                <Label>생년월일 * (8자리)</Label>
+                <Input 
+                    value={formData.birthdate} 
+                    onChange={(e) => handleChange("birthdate", e.target.value)} 
+                    placeholder="19900101" 
+                    maxLength={8} 
+                    inputMode="numeric"
+                />
+              </div>
             </div>
             <div><Label>닉네임 *</Label><div className="flex gap-2 mt-1"><Input value={formData.nickname} onChange={(e) => handleChange("nickname", e.target.value)} /><Button variant="outline" onClick={() => handleCheckDuplicate("nickname")}>중복확인</Button></div></div>
             <div><Label>이메일 *</Label><div className="flex gap-2 mt-1"><Input value={formData.email} onChange={(e) => handleChange("email", e.target.value)} /><Button variant="outline" onClick={() => handleCheckDuplicate("email")}>중복확인</Button></div></div>
-            <div><Label>연락처</Label><Input value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="010-0000-0000" /></div>
+            
+            <div>
+                <Label>연락처 * (11자리)</Label>
+                <Input 
+                    value={formData.phone} 
+                    onChange={(e) => handleChange("phone", e.target.value)} 
+                    placeholder="01012345678" 
+                    maxLength={11}
+                    inputMode="numeric"
+                />
+            </div>
             <div><Label>주소</Label><Input value={formData.address} onChange={(e) => handleChange("address", e.target.value)} placeholder="주소를 입력하세요" /></div>
           </div>
         </div>
